@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "36299293397",
+    "project_id": "grimoires-dyd",
+    "storage_bucket": "grimoires-dyd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:36299293397:android:57f4559850c03471a8585c",
+        "android_client_info": {
+          "package_name": "com.grimoires.Grimoires"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDVadAMD2l76cAAY-kmbzk4XQfVMyPEsdY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
