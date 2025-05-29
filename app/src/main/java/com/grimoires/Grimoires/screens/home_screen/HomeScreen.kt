@@ -59,8 +59,7 @@ fun HomeScreenWithDrawer(navController: NavHostController) {
                         "MY CHARACTERS" -> navController.navigate("characters")
                         "MY CAMPAIGNS" -> navController.navigate("campaigns")
                         "THE LIBRARY" -> navController.navigate("library")
-                        "DICE CALCULATOR" -> navController.navigate("dice")
-                        "SETTINGS" -> navController.navigate("settings")
+                        "DICE CALCULATOR" -> navController.navigate("calculator")
                         "profile" -> navController.navigate("userProfileSection")
                     }
                     scope.launch { drawerState.close() }

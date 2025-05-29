@@ -1,7 +1,5 @@
 package com.grimoires.Grimoires.domain.model
 
-import java.util.UUID
-
 data class Campaña(
     val idCampaña: String = "",
     var codigoAcceso: String = "",

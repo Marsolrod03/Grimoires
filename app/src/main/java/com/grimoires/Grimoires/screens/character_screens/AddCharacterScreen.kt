@@ -14,7 +14,6 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerValue
-
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -22,7 +21,6 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -50,11 +48,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.google.firebase.firestore.FirebaseFirestore
 import com.grimoires.Grimoires.domain.model.PlayableCharacter
-import com.grimoires.Grimoires.ui.element_views.CustomDrawerContent
 import com.grimoires.Grimoires.ui.models.CatalogViewModel
 import com.grimoires.Grimoires.ui.models.StatsViewModel
 import com.grimoires.Grimoires.ui.models.UserViewModel
 import kotlinx.coroutines.launch
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddCharacterScreen(

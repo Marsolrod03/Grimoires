@@ -66,8 +66,7 @@ fun CharacterScreen(
                         "MY CHARACTERS" -> "character"
                         "MY CAMPAIGNS" -> "campaigns"
                         "THE LIBRARY" -> "library"
-                        "DICE CALCULATOR" -> "dice"
-                        "SETTINGS" -> "settings"
+                        "DICE CALCULATOR" -> "calculator"
                         "profile" -> "userProfileSection"
                         else -> null
                     }
