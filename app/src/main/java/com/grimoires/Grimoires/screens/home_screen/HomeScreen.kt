@@ -32,6 +32,7 @@ import androidx.navigation.NavHostController
 import com.grimoires.Grimoires.ui.element_views.CustomDrawerContent
 import com.grimoires.Grimoires.ui.element_views.MenuAdView
 import com.grimoires.Grimoires.ui.models.HomeScreenViewModel
+import com.grimoires.Grimoires.ui.models.UserViewModel
 import kotlinx.coroutines.launch
 
 
@@ -41,8 +42,10 @@ fun HomeScreenWithDrawer(navController: NavHostController) {
     val viewModel: HomeScreenViewModel = viewModel()
     val ads by viewModel.ads
 
-    val topBarColor = Color(0xFFB44B33)
+    Color(0xFFB44B33)
 
+    val userViewModel: UserViewModel = viewModel()
+    val nickname = userViewModel.nickname
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
@@ -50,17 +53,20 @@ fun HomeScreenWithDrawer(navController: NavHostController) {
         drawerState = drawerState,
         drawerContent = {
             CustomDrawerContent(
-                nickname = viewModel.nickname.value,
-                onOptionSelected = { selected ->
-                    when (selected) {
+                nickname = nickname,
+                onOptionSelected = { option ->
+                    when (option) {
                         "MY CHARACTERS" -> navController.navigate("characters")
                         "MY CAMPAIGNS" -> navController.navigate("campaigns")
                         "THE LIBRARY" -> navController.navigate("library")
                         "DICE CALCULATOR" -> navController.navigate("dice")
                         "SETTINGS" -> navController.navigate("settings")
+                        "profile" -> navController.navigate("userProfileSection")
                     }
+                    scope.launch { drawerState.close() }
                 }
             )
+
         }
     ) {
         Scaffold(
