@@ -35,8 +35,7 @@ fun CustomDrawerContent(
         "MY CHARACTERS",
         "MY CAMPAIGNS",
         "THE LIBRARY",
-        "DICE CALCULATOR",
-        "SETTINGS"
+        "DICE CALCULATOR"
     )
 
     Column(

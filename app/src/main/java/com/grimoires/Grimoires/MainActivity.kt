@@ -20,6 +20,7 @@ import com.grimoires.Grimoires.screens.authentication_screens.ForgotPasswordScre
 import com.grimoires.Grimoires.screens.authentication_screens.LoginScreen
 import com.grimoires.Grimoires.screens.authentication_screens.SignUpScreen
 import com.grimoires.Grimoires.screens.authentication_screens.WelcomeScreen
+import com.grimoires.Grimoires.screens.calculator.DiceCalculatorScreen
 import com.grimoires.Grimoires.screens.character_screens.AddCharacterScreen
 import com.grimoires.Grimoires.screens.character_screens.CharacterSheetScreen
 import com.grimoires.Grimoires.screens.character_screens.CharacterScreen
@@ -164,6 +165,10 @@ fun MyApp() {
         ) { backStackEntry ->
             val characterId = backStackEntry.arguments?.getString("characterId") ?: ""
             EquipmentScreen(navController, characterId)
+        }
+
+        composable("calculator") {
+            DiceCalculatorScreen()
         }
     }
 }
