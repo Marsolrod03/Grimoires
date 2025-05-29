@@ -1,11 +1,13 @@
 package com.grimoires.Grimoires.ui.models
 
+import android.util.Log
 import android.util.Patterns
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
+import com.google.firebase.firestore.FirebaseFirestore
 
 
 class SignUpViewModel : ViewModel() {
@@ -28,6 +30,8 @@ class SignUpViewModel : ViewModel() {
 
 
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val db = FirebaseFirestore.getInstance()
+
 
     fun updateUsername(value: String) {
         _username.value = value.trim()
@@ -60,16 +64,21 @@ class SignUpViewModel : ViewModel() {
 
         state = HandleState.Loading
 
-        auth.createUserWithEmailAndPassword(email.toString(), password.toString())
+        auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
+                    val user = auth.currentUser
                     updateUserProfile()
+                    user?.let {
+                        saveUserToFirestore(it.uid)
+                    }
                     state = HandleState.Success
                 } else {
                     state = HandleState.Error(parseFirebaseError(task.exception))
                 }
             }
     }
+
 
     private fun updateUserProfile() {
         val user = auth.currentUser
@@ -137,10 +146,31 @@ class SignUpViewModel : ViewModel() {
                 nickname.isNotBlank() &&
                 email.isNotBlank() &&
                 password.isNotBlank() &&
-                Patterns.EMAIL_ADDRESS.matcher(email.toString()).matches() &&
+                Patterns.EMAIL_ADDRESS.matcher(email).matches() &&
                 password.length >= 6 &&
                 acceptedTerms
     }
+
+    private fun saveUserToFirestore(uid: String) {
+        val userData = hashMapOf(
+            "uid" to uid,
+            "username" to username,
+            "nickname" to nickname,
+            "email" to email,
+            "createdAt" to System.currentTimeMillis()
+        )
+
+        db.collection("users")
+            .document(uid)
+            .set(userData)
+            .addOnSuccessListener {
+                Log.d("Firestore", "User data added")
+            }
+            .addOnFailureListener { e ->
+                Log.w("Firestore", "Error writing user", e)
+            }
+    }
+
 }
 
 

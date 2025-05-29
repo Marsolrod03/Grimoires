@@ -3,20 +3,12 @@ package com.grimoires.Grimoires.ui.models
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import com.google.firebase.auth.FirebaseAuth
 import com.grimoires.Grimoires.R
 import com.grimoires.Grimoires.data.classes.MenuAd
 
 
 class HomeScreenViewModel
     : ViewModel() {
-
-    var nickname = mutableStateOf("DUNGEONQUEEN")
-
-    fun updateProfile(nick: String, user: String) {
-        nickname.value = nick
-    }
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 
     private val _ads = mutableStateOf(
         listOf(
@@ -39,10 +31,6 @@ class HomeScreenViewModel
     )
     val ads: State<List<MenuAd>> = _ads
 
-    fun logout(onLogout: () -> Unit) {
-        auth.signOut()
-        onLogout()
-    }
 }
 
 

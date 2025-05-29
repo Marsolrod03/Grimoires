@@ -63,7 +63,10 @@ fun CustomDrawerContent(
             text = nickname,
             color = textColor,
             fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .clickable { onOptionSelected("profile") }
+                .padding(8.dp)
         )
 
 

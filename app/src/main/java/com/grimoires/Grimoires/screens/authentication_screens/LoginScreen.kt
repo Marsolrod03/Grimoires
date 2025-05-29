@@ -97,7 +97,6 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Formulario
         Column(
             modifier = Modifier
                 .fillMaxWidth()

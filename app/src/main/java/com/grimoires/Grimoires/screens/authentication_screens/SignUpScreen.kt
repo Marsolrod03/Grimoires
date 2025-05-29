@@ -199,7 +199,7 @@ fun SignUpScreen(navController: NavHostController) {
 
             if (currentState is HandleState.Error) {
                 Text(
-                    text = (currentState as HandleState.Error).message,
+                    text = currentState.message,
                     color = Color.Red,
                     modifier = Modifier.padding(top = 8.dp)
                 )
@@ -209,7 +209,7 @@ fun SignUpScreen(navController: NavHostController) {
 
     if (currentState is HandleState.Error) {
         ErrorDialog(
-            message = (currentState as HandleState.Error).message,
+            message = currentState.message,
             onDismiss = { viewModel.state = HandleState.Idle }
         )
     }
