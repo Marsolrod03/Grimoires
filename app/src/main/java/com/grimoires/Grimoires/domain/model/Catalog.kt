@@ -11,6 +11,7 @@ data class Attributes(
     val wisdom: Int = 0,
     val charisma: Int = 0
 )
+
 data class CharacterClass(
     val classId: String = "",
     val name: String = "",
@@ -45,4 +46,12 @@ data class Spell(
     val level: Int = 1,
     @get:PropertyName("class") @set:PropertyName("class")
     var charClass: List<String> = emptyList()
+)
+
+data class LibraryItem(
+    val id: String,
+    val title: String,
+    val description: String,
+    val type: String
+
 )

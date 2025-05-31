@@ -7,6 +7,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
 import com.grimoires.Grimoires.domain.model.CharacterClass
 import com.grimoires.Grimoires.domain.model.Item
+import com.grimoires.Grimoires.domain.model.LibraryItem
 import com.grimoires.Grimoires.domain.model.Race
 import com.grimoires.Grimoires.domain.model.Spell
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -89,4 +90,5 @@ class CatalogViewModel : ViewModel() {
             .addOnFailureListener {
             }
     }
+
 }

@@ -28,6 +28,11 @@ import com.grimoires.Grimoires.screens.catalog_screens.EquipmentScreen
 import com.grimoires.Grimoires.screens.catalog_screens.SpellsScreen
 import com.grimoires.Grimoires.screens.character_screens.StatsScreen
 import com.grimoires.Grimoires.screens.home_screen.HomeScreenWithDrawer
+import com.grimoires.Grimoires.screens.library_screen.ClassDetailScreen
+import com.grimoires.Grimoires.screens.library_screen.ItemDetailScreen
+import com.grimoires.Grimoires.screens.library_screen.LibraryScreen
+import com.grimoires.Grimoires.screens.library_screen.RaceDetailScreen
+import com.grimoires.Grimoires.screens.library_screen.SpellDetailScreen
 import com.grimoires.Grimoires.ui.models.CatalogViewModel
 import com.grimoires.Grimoires.ui.models.LoginViewModel
 import com.grimoires.Grimoires.ui.models.PlayableCharacterViewModel
@@ -64,7 +69,7 @@ fun MyApp() {
 
     NavHost(
         navController = navController,
-        startDestination = if (Firebase.auth.currentUser !=null) "home" else "welcome"
+        startDestination = if (Firebase.auth.currentUser != null) "home" else "welcome"
     ) {
         composable("welcome") { WelcomeScreen(navController) }
 
@@ -124,8 +129,6 @@ fun MyApp() {
                 )
             }
         }
-
-
         composable("addCharacter") {
             AddCharacterScreen(
                 navController = navController,
@@ -144,7 +147,11 @@ fun MyApp() {
         ) { backStackEntry ->
             val characterId = backStackEntry.arguments?.getString("characterId") ?: ""
 
-            StatsScreen(navController = navController, statsViewModel = statsViewModel, characterId = characterId)
+            StatsScreen(
+                navController = navController,
+                statsViewModel = statsViewModel,
+                characterId = characterId
+            )
         }
 
         composable(
@@ -156,7 +163,11 @@ fun MyApp() {
         ) { backStackEntry ->
             val characterClass = backStackEntry.arguments?.getString("characterClass") ?: ""
             val characterId = backStackEntry.arguments?.getString("characterId") ?: ""
-            SpellsScreen(navController = navController, characterClass = characterClass, characterId = characterId)
+            SpellsScreen(
+                navController = navController,
+                characterClass = characterClass,
+                characterId = characterId
+            )
         }
 
         composable(
@@ -170,5 +181,64 @@ fun MyApp() {
         composable("calculator") {
             DiceCalculatorScreen(navController)
         }
+
+        composable("library") {
+            LibraryScreen(
+                navController = navController,
+                nickname = userViewModel.nickname,
+                viewModel = catalogViewModel
+            )
+        }
+
+
+        composable("detail/race/{raceId}") { backStackEntry ->
+            val raceId = backStackEntry.arguments?.getString("raceId") ?: ""
+            val races by catalogViewModel.races.collectAsState()
+            val race = races.find { it.raceId == raceId }
+
+            race?.let {
+                RaceDetailScreen(race = it) {
+                    navController.popBackStack()
+                }
+            }
+        }
+
+        composable("detail/class/{classId}") { backStackEntry ->
+            val classId = backStackEntry.arguments?.getString("classId") ?: ""
+            val classes by catalogViewModel.classes.collectAsState()
+            val charClass = classes.find { it.classId == classId }
+
+            charClass?.let {
+                ClassDetailScreen(characterClass = it) {
+                    navController.popBackStack()
+                }
+            }
+        }
+
+        composable("detail/item/{itemId}") { backStackEntry ->
+            val itemId = backStackEntry.arguments?.getString("itemId") ?: ""
+            val items by catalogViewModel.items.collectAsState()
+            val item = items.find { it.itemId == itemId }
+
+            item?.let {
+                ItemDetailScreen(item = it) {
+                    navController.popBackStack()
+                }
+            }
+        }
+
+        composable("detail/spell/{spellId}") { backStackEntry ->
+            val spellId = backStackEntry.arguments?.getString("spellId") ?: ""
+            val spells by catalogViewModel.spells.collectAsState()
+            val spell = spells.find { it.spellId == spellId }
+
+            spell?.let {
+                SpellDetailScreen(spell = it) {
+                    navController.popBackStack()
+                }
+            }
+        }
     }
 }
+
+
