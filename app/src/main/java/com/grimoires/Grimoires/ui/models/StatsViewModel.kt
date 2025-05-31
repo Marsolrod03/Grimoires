@@ -15,7 +15,7 @@ class StatsViewModel : ViewModel() {
             .get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
-                    val attrsMap = document.get("attributes") as? Map<String, Any>
+                    val attrsMap = document.get("attributes") as? Map<*, *>
                     if (attrsMap != null) {
                         val loadedAttributes = Attributes(
                             strength = (attrsMap["strength"] as? Long)?.toInt() ?: 10,

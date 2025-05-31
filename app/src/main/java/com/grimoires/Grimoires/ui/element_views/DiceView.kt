@@ -81,7 +81,7 @@ fun DiceView(dice: Dice, onClick: () -> Unit) {
 }
 
 @Composable
-fun RollResultItem(dieType: Int, result: Int) {
+fun RollResultItem(diceType: Int, result: Int) {
     Card(
         modifier = Modifier
             .width(80.dp)
@@ -97,7 +97,7 @@ fun RollResultItem(dieType: Int, result: Int) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "d$dieType",
+                text = "d$diceType",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.White
             )
@@ -111,51 +111,4 @@ fun RollResultItem(dieType: Int, result: Int) {
     }
 }
 
-@Composable
-fun RollHistoryItem(results: List<Int>, dice: List<Dice>, rollNumber: Int) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFB44B33)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "Roll #$rollNumber",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                results.forEachIndexed { index, result ->
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "d${dice[index].type}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFFF7E9D4)
-                        )
-                        Text(
-                            text = result.toString(),
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFF7E9D4)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}

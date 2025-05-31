@@ -168,7 +168,7 @@ fun MyApp() {
         }
 
         composable("calculator") {
-            DiceCalculatorScreen()
+            DiceCalculatorScreen(navController)
         }
     }
 }
