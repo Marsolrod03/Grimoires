@@ -67,7 +67,6 @@ fun LibraryScreen(
     val spells by viewModel.spells.collectAsState()
 
     var selectedCategory by rememberSaveable { mutableStateOf("All") }
-
     var searchQuery by rememberSaveable { mutableStateOf("") }
 
     val scope = rememberCoroutineScope()

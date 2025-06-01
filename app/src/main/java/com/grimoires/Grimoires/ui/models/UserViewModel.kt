@@ -26,6 +26,14 @@ class UserViewModel : ViewModel() {
     val uid: String
         get() = auth.currentUser?.uid ?: ""
 
+
+
+    private var _currentCharacterId by mutableStateOf("")
+    val currentCharacterId: String
+        get() = _currentCharacterId
+
+
+
     init {
         fetchUserData()
     }

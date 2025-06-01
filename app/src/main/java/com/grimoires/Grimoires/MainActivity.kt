@@ -1,5 +1,6 @@
 package com.grimoires.Grimoires
 
+
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -7,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -21,6 +23,9 @@ import com.grimoires.Grimoires.screens.authentication_screens.LoginScreen
 import com.grimoires.Grimoires.screens.authentication_screens.SignUpScreen
 import com.grimoires.Grimoires.screens.authentication_screens.WelcomeScreen
 import com.grimoires.Grimoires.screens.calculator.DiceCalculatorScreen
+import com.grimoires.Grimoires.screens.campaign_screens.CampaignDetailScreen
+import com.grimoires.Grimoires.screens.campaign_screens.CreateCampaignScreen
+import com.grimoires.Grimoires.screens.campaign_screens.JoinCampaignScreen
 import com.grimoires.Grimoires.screens.character_screens.AddCharacterScreen
 import com.grimoires.Grimoires.screens.character_screens.CharacterSheetScreen
 import com.grimoires.Grimoires.screens.character_screens.CharacterScreen
@@ -33,11 +38,15 @@ import com.grimoires.Grimoires.screens.library_screen.ItemDetailScreen
 import com.grimoires.Grimoires.screens.library_screen.LibraryScreen
 import com.grimoires.Grimoires.screens.library_screen.RaceDetailScreen
 import com.grimoires.Grimoires.screens.library_screen.SpellDetailScreen
+import com.grimoires.Grimoires.screens.note_screens.NotesScreen
+import com.grimoires.Grimoires.ui.element_views.FullScreenLoading
 import com.grimoires.Grimoires.ui.models.CatalogViewModel
 import com.grimoires.Grimoires.ui.models.LoginViewModel
 import com.grimoires.Grimoires.ui.models.PlayableCharacterViewModel
 import com.grimoires.Grimoires.ui.models.StatsViewModel
 import com.grimoires.Grimoires.ui.models.UserViewModel
+import com.grimoires.Grimoires.ui.screen.CampaignScreen
+import com.grimoires.Grimoires.viewmodel.CampaignViewModel
 
 
 class MainActivity : ComponentActivity() {
@@ -57,6 +66,7 @@ fun MyApp() {
     val userViewModel: UserViewModel = viewModel()
     val statsViewModel: StatsViewModel = viewModel()
     val catalogViewModel: CatalogViewModel = viewModel()
+    val campaignViewModel: CampaignViewModel = viewModel()
 
     LaunchedEffect(loginViewModel.isLoggedIn.value) {
         if (loginViewModel.isLoggedIn.value) {
@@ -238,6 +248,73 @@ fun MyApp() {
                 }
             }
         }
+
+        composable("campaigns") {
+            val currentUserId = Firebase.auth.currentUser?.uid ?: ""
+            val currentUserCharacterId by remember { userViewModel::currentCharacterId }
+
+
+            LaunchedEffect(currentUserId, currentUserCharacterId) {
+                campaignViewModel.loadMasteredCampaigns(currentUserId)
+                campaignViewModel.loadPlayedCampaigns(currentUserCharacterId)
+            }
+
+            val isLoading by campaignViewModel.isLoading.collectAsState()
+
+            if (isLoading) {
+                FullScreenLoading()
+            } else {
+                CampaignScreen(
+                    navController = navController,
+                    userViewModel = userViewModel,
+                    viewModel = campaignViewModel
+                )
+            }
+        }
+
+        composable("createCampaign") {
+            CreateCampaignScreen(
+                navController = navController,
+                campaignViewModel = campaignViewModel,
+            )
+        }
+
+        composable("joinCampaign") {
+            JoinCampaignScreen(
+                navController = navController,
+                campaignViewModel = campaignViewModel,
+                characterViewModel = characterViewModel
+            )
+        }
+
+        composable(
+            "campaignDetail/{campaignId}",
+            arguments = listOf(navArgument("campaignId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val campaignId = backStackEntry.arguments?.getString("campaignId") ?: ""
+            CampaignDetailScreen(
+                navController = navController,
+                campaignId = campaignId,
+                campaignViewModel = campaignViewModel,
+                userViewModel = userViewModel
+            )
+        }
+
+        composable(
+            "notes/{campaignId}",
+            arguments = listOf(navArgument("campaignId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val campaignId = backStackEntry.arguments?.getString("campaignId") ?: ""
+            NotesScreen(
+                navController = navController,
+                campaignId = campaignId,
+                campaignViewModel = campaignViewModel,
+                userViewModel = userViewModel
+            )
+        }
+
+
+
     }
 }
 
