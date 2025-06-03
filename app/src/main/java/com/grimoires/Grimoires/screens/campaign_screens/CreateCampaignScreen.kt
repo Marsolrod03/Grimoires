@@ -6,13 +6,23 @@ import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,6 +41,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,6 +49,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalContext
@@ -49,8 +61,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import com.grimoires.Grimoires.ui.element_views.CustomDrawerContent
+import com.grimoires.Grimoires.ui.theme.deepBrown
+import com.grimoires.Grimoires.ui.theme.lightTan
+import com.grimoires.Grimoires.ui.theme.parchment
 import com.grimoires.Grimoires.viewmodel.CampaignViewModel
 import kotlinx.coroutines.launch
 
@@ -65,6 +81,9 @@ fun CreateCampaignScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val isLoading by campaignViewModel.isLoading.collectAsState()
+    val scrollState = rememberScrollState()
+    val masterId = Firebase.auth.currentUser?.uid ?: ""
 
     var name by remember { mutableStateOf("") }
     var genre by remember { mutableStateOf("") }
@@ -123,7 +142,7 @@ fun CreateCampaignScreen(
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color(0xFFB44B33),
+                        containerColor = deepBrown,
                         titleContentColor = Color.White,
                         navigationIconContentColor = Color.White
                     )
@@ -134,7 +153,8 @@ fun CreateCampaignScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color(0xFFF8EFE4))
+                        .verticalScroll(scrollState)
+                        .background(lightTan)
                         .padding(horizontal = 24.dp)
                         .padding(innerPadding),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -147,7 +167,7 @@ fun CreateCampaignScreen(
                         value = name,
                         onValueChange = { name = it },
                         cornerRadius = 12.dp,
-                        backgroundColor = Color(0xFFEFEFEF)
+                        backgroundColor = parchment
                     )
 
 
@@ -156,12 +176,12 @@ fun CreateCampaignScreen(
                         value = genre,
                         onValueChange = { genre = it },
                         cornerRadius = 12.dp,
-                        backgroundColor = Color(0xFFEFEFEF)
+                        backgroundColor = parchment
                     )
 
                     Text(
                         text = "DESCRIPTION:",
-                        color = Color(0xFF8B3A2C),
+                        color = deepBrown,
                         style = MaterialTheme.typography.labelLarge.copy(
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.Serif
@@ -173,20 +193,22 @@ fun CreateCampaignScreen(
                     )
                     OutlinedTextField(
                         value = description,
-                        shape = RoundedCornerShape(12.dp),
                         onValueChange = { description = it },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .border(1.dp, Color.Black, shape = RoundedCornerShape(12.dp))
-                            .background(Color(0xFFEFEFEF))
                             .height(200.dp),
-
+                        shape = RoundedCornerShape(12.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = parchment,
+                            unfocusedContainerColor = parchment,
+                            disabledContainerColor = parchment
                         )
+                    )
 
                     Button(
                         onClick = { code = generateCode() },
                         enabled = code.isBlank(),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB44B33)),
+                        colors = ButtonDefaults.buttonColors(containerColor = deepBrown),
                         modifier = Modifier.align(Alignment.CenterHorizontally),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -195,7 +217,7 @@ fun CreateCampaignScreen(
 
                     Text(
                         text = "CODE:",
-                        color = Color(0xFF8B3A2C),
+                        color = deepBrown,
                         style = MaterialTheme.typography.labelLarge.copy(
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.Serif
@@ -204,7 +226,8 @@ fun CreateCampaignScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color(0xFFEFEFEF))
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(parchment)
                             .border(1.dp, Color.Black, shape = RoundedCornerShape(12.dp))
                             .padding(horizontal = 8.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -232,41 +255,33 @@ fun CreateCampaignScreen(
                     }
 
                     Button(
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
                         onClick = {
-                            val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
-
-                            if (name.isBlank() || genre.isBlank() || description.isBlank() || code.isBlank()) {
-                                Toast.makeText(context, "Please fill all fields and generate a code.", Toast.LENGTH_SHORT).show()
-                            } else if (currentUserId.isNullOrBlank()) {
-                                Toast.makeText(context, "User not logged in.", Toast.LENGTH_SHORT).show()
-                            } else {
-                                campaignViewModel.createNewCampaign(
-                                    title = name,
-                                    description = description,
-                                    masterId = currentUserId,
-                                    code = code,
-                                    onSuccess = {
-                                        navController.popBackStack()
-                                    },
-                                    onError = {
-                                        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-                                    }
-                                )
+                            if (name.isBlank() || code.isEmpty()) {
+                                return@Button
                             }
+
+                            campaignViewModel.createNewCampaign(
+                                title = name,
+                                description = description,
+                                masterId = masterId ,
+                                accessCode = code,
+                                onSuccess = { navController.popBackStack() },
+                                onError = { error -> /* Mostrar error */ }
+                            )
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5D9B82)),
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .padding(top = 16.dp),
-                        shape = RoundedCornerShape(20.dp)
+                        enabled = code.isNotEmpty() && !isLoading
                     ) {
-                        Text("SAVE CAMPAIGN", color = Color.White)
+                        if (isLoading) {
+                            CircularProgressIndicator(color = Color.White)
+                        } else {
+                            Text("SAVE CAMPAIGN")
+                        }
                     }
                 }
-            }
-        )
+            })
     }
-}
+    }
 
 @Composable
 fun LabeledTextField(
@@ -274,13 +289,13 @@ fun LabeledTextField(
     value: String,
     onValueChange: (String) -> Unit,
     cornerRadius: Dp = 12.dp,
-    backgroundColor: Color = Color(0xFFEFEFEF)
+    backgroundColor: Color = parchment
 
 ) {
     Column {
         Text(
             text = "$label:",
-            color = Color(0xFF8B3A2C),
+            color = deepBrown,
             style = MaterialTheme.typography.labelLarge.copy(
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Serif

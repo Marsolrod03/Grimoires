@@ -1,58 +1,70 @@
 package com.grimoires.Grimoires.ui.models
 
-import android.util.Log
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-
+import com.grimoires.Grimoires.domain.model.PlayableCharacter
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class UserViewModel : ViewModel() {
 
-    private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+    private val db = FirebaseFirestore.getInstance()
 
-    var username by mutableStateOf("")
+    var characters = mutableStateOf<List<PlayableCharacter>>(emptyList())
         private set
 
-    var nickname by mutableStateOf("")
-        private set
+    private var _nickname = mutableStateOf("")
+    val nickname: String
+        get() = _nickname.value
 
-    var isLoading by mutableStateOf(true)
-        private set
-
-    val uid: String
-        get() = auth.currentUser?.uid ?: ""
+    private val _currentCharacterId = MutableStateFlow("")
+    val currentCharacterId: StateFlow<String> = _currentCharacterId.asStateFlow()
 
 
-
-    private var _currentCharacterId by mutableStateOf("")
-    val currentCharacterId: String
-        get() = _currentCharacterId
-
+    val uid: String?
+        get() = auth.currentUser?.uid
 
 
     init {
-        fetchUserData()
+        loadUserData()
     }
 
-    private fun fetchUserData() {
+    private fun loadUserData() {
         val uid = auth.currentUser?.uid ?: return
 
         db.collection("users").document(uid)
             .get()
-            .addOnSuccessListener { document ->
-                if (document.exists()) {
-                    username = document.getString("username") ?: ""
-                    nickname = document.getString("nickname") ?: ""
-                }
-                isLoading = false
+            .addOnSuccessListener { userDoc ->
+                val characterIdFromUser = userDoc.getString("currentCharacterId") ?: ""
+                println("Loaded currentCharacterId from user document: $characterIdFromUser")
+
+                db.collection("characters")
+                    .whereEqualTo("userId", uid)
+                    .get()
+                    .addOnSuccessListener { snapshot ->
+                        val chars = snapshot.documents.mapNotNull { it.toObject(PlayableCharacter::class.java) }
+                        characters.value = chars
+                        println("Loaded characters count: ${chars.size}")
+
+                        _currentCharacterId.value = characterIdFromUser.ifEmpty {
+                            chars.firstOrNull()?.characterId ?: ""
+                        }
+                        println("Current character id set to: ${_currentCharacterId.value}")
+                    }
             }
-            .addOnFailureListener {
-                isLoading = false
-                Log.e("UserViewModel", "Failed to fetch user data", it)
-            }
+    }
+
+
+
+
+    fun setCurrentCharacter(characterId: String) {
+        _currentCharacterId.value = characterId
+        val uid = auth.currentUser?.uid ?: return
+        db.collection("users").document(uid)
+            .update("currentCharacterId", characterId)
     }
 }

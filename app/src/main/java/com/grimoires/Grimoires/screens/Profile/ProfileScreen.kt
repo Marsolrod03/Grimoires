@@ -1,5 +1,6 @@
 package com.grimoires.Grimoires.screens.Profile
 
+import HandleMenu
 import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -27,6 +28,7 @@ import com.grimoires.Grimoires.R
 import com.grimoires.Grimoires.ui.models.ProfileState
 import com.grimoires.Grimoires.ui.models.ProfileViewModel
 import com.grimoires.Grimoires.ui.element_views.UserProfileSection
+import com.grimoires.Grimoires.ui.models.UserViewModel
 
 
 
@@ -35,6 +37,8 @@ import com.grimoires.Grimoires.ui.element_views.UserProfileSection
 @Composable
 fun ProfileScreen(navController: NavHostController) {
     val viewModel: ProfileViewModel = viewModel()
+    val userViewModel: UserViewModel = viewModel()
+    val nickname = userViewModel.nickname
     val currentState by viewModel.state
     val backgroundColor = Color(0xFFF7E9D4)
     val accentColor = Color(0xFFB44B33)
@@ -46,57 +50,63 @@ fun ProfileScreen(navController: NavHostController) {
             }
         }
     }
+    HandleMenu(nickname, navController) { scope, drawerState ->
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Perfil", color = Color.White) },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = accentColor
+                    ),
+                    actions = {
+                        IconButton(onClick = { viewModel.logout() }) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.logout),
+                                contentDescription = "Logout",
+                                tint = Color.White
+                            )
+                        }
+                    }
+                )
+            }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Perfil", color = Color.White) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = accentColor
-                ),
-                actions = {
-                    IconButton(onClick = { viewModel.logout() }) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.logout),
-                            contentDescription = "Logout",
-                            tint = Color.White
+        )
+    { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(backgroundColor)
+                    .padding(padding),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                when (currentState) {
+                    is ProfileState.Loading -> {
+                        CircularProgressIndicator(
+                            color = accentColor,
+                            strokeWidth = 2.dp
                         )
                     }
+
+                    is ProfileState.Success -> {
+                        val state = currentState as ProfileState.Success
+                        UserProfileSection(
+                            userName = state.userName,
+                            userEmail = state.userEmail,
+                            onNameChange = { viewModel.updateProfileName(it) },
+                            accentColor = accentColor
+                        )
+                    }
+
+                    is ProfileState.Error -> {
+                        Text(
+                            text = (currentState as ProfileState.Error).message,
+                            color = Color.Red,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+
+                    else -> {}
                 }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(backgroundColor)
-                .padding(padding),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            when (currentState) {
-                is ProfileState.Loading -> {
-                    CircularProgressIndicator(
-                        color = accentColor,
-                        strokeWidth = 2.dp
-                    )
-                }
-                is ProfileState.Success -> {
-                    val state = currentState as ProfileState.Success
-                    UserProfileSection(
-                        userName = state.userName,
-                        userEmail = state.userEmail,
-                        onNameChange = { viewModel.updateProfileName(it) },
-                        accentColor = accentColor
-                    )
-                }
-                is ProfileState.Error -> {
-                    Text(
-                        text = (currentState as ProfileState.Error).message,
-                        color = Color.Red,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                }
-                else -> {}
             }
         }
     }

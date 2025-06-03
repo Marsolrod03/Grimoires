@@ -22,8 +22,6 @@ import com.grimoires.Grimoires.data.classes.MenuAd
 
 @Composable
 fun MenuAdView(ad: MenuAd) {
-    val primaryColor = Color(0xFFB44B33)
-
     Card(
         modifier = Modifier
             .padding(16.dp)

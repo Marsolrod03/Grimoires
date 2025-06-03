@@ -1,48 +1,16 @@
 package com.grimoires.Grimoires.ui.screen
 
+import HandleMenu
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberDrawerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -53,7 +21,6 @@ import androidx.navigation.NavHostController
 import com.grimoires.Grimoires.R
 import com.grimoires.Grimoires.domain.model.Campaign
 import com.grimoires.Grimoires.ui.element_views.CampaignCard
-import com.grimoires.Grimoires.ui.element_views.CustomDrawerContent
 import com.grimoires.Grimoires.ui.element_views.FullScreenLoading
 import com.grimoires.Grimoires.ui.models.UserViewModel
 import com.grimoires.Grimoires.viewmodel.CampaignViewModel
@@ -63,29 +30,27 @@ import kotlinx.coroutines.launch
 @Composable
 fun CampaignScreen(
     navController: NavHostController,
+    nickname: String,
     userViewModel: UserViewModel = viewModel(),
     viewModel: CampaignViewModel = viewModel()
 ) {
-    val currentUserId = userViewModel.uid
-    val currentUserCharacterId = userViewModel.currentCharacterId
-
-
+    val currentUserId = userViewModel.uid ?: ""
     val masteredCampaigns by viewModel.masteredCampaigns.collectAsState()
     val playedCampaigns by viewModel.playedCampaigns.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
+
 
     LaunchedEffect(currentUserId) {
-        viewModel.loadMasteredCampaigns(currentUserId)
+        if (currentUserId.isNotBlank()) {
+            viewModel.loadMasteredCampaigns(currentUserId)
+            viewModel.loadPlayedCampaigns(currentUserId)
+        }
     }
 
-    LaunchedEffect(currentUserCharacterId) {
-        viewModel.loadPlayedCampaigns(currentUserCharacterId)
-    }
+
 
     LaunchedEffect(errorMessage) {
         errorMessage?.let { message ->
@@ -94,35 +59,7 @@ fun CampaignScreen(
         }
     }
 
-    LaunchedEffect(currentUserId, currentUserCharacterId) {
-        if (currentUserId.isNotEmpty()) {
-            viewModel.loadMasteredCampaigns(currentUserId)
-            viewModel.loadPlayedCampaigns(currentUserCharacterId!!)
-        }
-    }
-
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            ModalDrawerSheet(
-                drawerContainerColor = Color(0xFFF5F5F5)
-            ) {
-                CustomDrawerContent(
-                    nickname = "Usuario",
-                    onOptionSelected = { option ->
-                        when (option) {
-                            "MY CHARACTERS" -> navController.navigate("characters")
-                            "MY CAMPAIGNS" -> navController.navigate("campaigns")
-                            "THE LIBRARY" -> navController.navigate("library")
-                            "DICE CALCULATOR" -> navController.navigate("calculator")
-                            "profile" -> navController.navigate("userProfileSection")
-                        }
-                        scope.launch { drawerState.close() }
-                    }
-                )
-            }
-        }
-    ) {
+    HandleMenu(nickname, navController) { scope, drawerState ->
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
@@ -135,14 +72,8 @@ fun CampaignScreen(
                         )
                     },
                     navigationIcon = {
-                        IconButton(
-                            onClick = { scope.launch { drawerState.open() } }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Menu,
-                                contentDescription = "Menu",
-                                tint = Color.White
-                            )
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Color.White)
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -170,7 +101,7 @@ fun CampaignScreen(
                                     Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
                                     color = Color(0xFFB44B33)
                                 )
-                            },
+                            }
                         ) {
                             Tab(
                                 selected = selectedTab == 0,
@@ -198,7 +129,6 @@ fun CampaignScreen(
                                     )
                                 }
                             )
-
                         }
 
                         when (selectedTab) {
@@ -211,7 +141,6 @@ fun CampaignScreen(
                                 emptyMessage = "No mastered campaigns",
                                 emptyButtonText = "CREATE CAMPAIGN"
                             )
-
                             1 -> CampaignList(
                                 campaigns = playedCampaigns,
                                 onCampaignClick = { campaign ->
@@ -245,12 +174,12 @@ fun CampaignList(
     ) {
         if (campaigns.isEmpty()) {
             Box(
-                modifier = Modifier.fillMaxWidth().weight(1f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
                 contentAlignment = Alignment.Center
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
                         painter = painterResource(id = R.drawable.d20),
                         contentDescription = null,

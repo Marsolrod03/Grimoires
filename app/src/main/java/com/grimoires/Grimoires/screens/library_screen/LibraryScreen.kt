@@ -1,6 +1,9 @@
 package com.grimoires.Grimoires.screens.library_screen
 
+import HandleMenu
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,38 +23,39 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.grimoires.Grimoires.domain.model.LibraryItem
-import com.grimoires.Grimoires.ui.element_views.CustomDrawerContent
+import com.grimoires.Grimoires.ui.element_views.LibraryItemCard
 import com.grimoires.Grimoires.ui.element_views.toLibraryItem
 import com.grimoires.Grimoires.ui.models.CatalogViewModel
+import com.grimoires.Grimoires.ui.theme.deepBrown
+import com.grimoires.Grimoires.ui.theme.lightTan
+import com.grimoires.Grimoires.ui.theme.parchment
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,9 +72,6 @@ fun LibraryScreen(
 
     var selectedCategory by rememberSaveable { mutableStateOf("All") }
     var searchQuery by rememberSaveable { mutableStateOf("") }
-
-    val scope = rememberCoroutineScope()
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
 
     val libraryItems = when (selectedCategory) {
         "Race" -> races.map { it.toLibraryItem() }
@@ -98,35 +99,26 @@ fun LibraryScreen(
                 it.description.contains(searchQuery, ignoreCase = true)
     }
 
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            CustomDrawerContent(
-                nickname = nickname,
-                onOptionSelected = { option ->
-                    when (option) {
-                        "MY CHARACTERS" -> navController.navigate("characters")
-                        "MY CAMPAIGNS" -> navController.navigate("campaigns")
-                        "THE LIBRARY" -> {}
-                        "DICE CALCULATOR" -> navController.navigate("calculator")
-                        "profile" -> navController.navigate("userProfileSection")
-                    }
-                    scope.launch { drawerState.close() }
-                }
-            )
-        }
-    ) {
+    libraryItems.forEach {
+        println("LibraryItem -> id: '${it.id}', title: '${it.title}', type: '${it.type}'")
+    }
+
+    HandleMenu(nickname, navController) { scope, drawerState ->
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Grimoires", color = Color.White) },
+                    title = { Text("The Library", color = Color.White, fontFamily = FontFamily.Serif) },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Color.White)
+                            Icon(
+                                Icons.Default.Menu,
+                                contentDescription = "Menu",
+                                tint = Color.White
+                            )
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color(0xFFB44B33),
+                        containerColor = deepBrown,
                         titleContentColor = Color.White
                     )
                 )
@@ -135,18 +127,24 @@ fun LibraryScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFFF7EDDF))
+                    .background(lightTan)
                     .padding(16.dp)
                     .padding(padding)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Filter", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF7C3A2D))
+                    Text(
+                        "Filter:",
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Serif,
+                        fontSize = 18.sp,
+                        color = deepBrown
+                    )
                     Spacer(Modifier.width(16.dp))
                     var expanded by remember { mutableStateOf(false) }
                     Box {
                         Button(
                             onClick = { expanded = true },
-                            colors = ButtonDefaults.buttonColors(Color(0xFFB14B34)),
+                            colors = ButtonDefaults.buttonColors(deepBrown),
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(selectedCategory.uppercase())
@@ -154,7 +152,7 @@ fun LibraryScreen(
                         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                             listOf("All", "Race", "Class", "Item", "Spell").forEach { type ->
                                 DropdownMenuItem(
-                                    text = { Text(type.replaceFirstChar { it.uppercase() }) },
+                                    text = { Text(type.replaceFirstChar { it.uppercase() }, fontFamily = FontFamily.Serif) },
                                     onClick = {
                                         selectedCategory = type
                                         expanded = false
@@ -167,47 +165,45 @@ fun LibraryScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    label = { Text("Search...") },
-                    modifier = Modifier.fillMaxWidth()
-                )
 
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+
+                ) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        label = { Text("Search...", fontFamily = FontFamily.Serif) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
                 Spacer(modifier = Modifier.height(16.dp))
 
                 LazyColumn {
                     items(libraryItems) { item ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp)
-                                .clickable {
-                                    navController.navigate("detail/${item.type}/${item.id}")
-                                },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFB14B34))
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(
-                                    text = item.title.uppercase(),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 18.sp,
-                                    color = Color.White
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = item.description,
-                                    fontSize = 14.sp,
-                                    color = Color.White
-                                )
+                        LibraryItemCard(item = item) {
+                            val type = item.type.lowercase()
+                            val id = item.id
+
+                            println("Navegando a detalle: tipo=$type, id=$id")
+
+                            if (id.isNotEmpty()) {
+                                when (type) {
+                                    "race" -> navController.navigate("detail/race/$id")
+                                    "class" -> navController.navigate("detail/class/$id")
+                                    "item" -> navController.navigate("detail/item/$id")
+                                    "spell" -> navController.navigate("detail/spell/$id")
+                                    else -> println("Tipo no válido para navegación: $type")
+                                }
+                            } else {
+                                println("Id vacío, no se navega")
                             }
                         }
                     }
                 }
+
             }
         }
     }
-
-
 }

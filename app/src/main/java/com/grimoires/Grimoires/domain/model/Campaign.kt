@@ -1,5 +1,7 @@
 package com.grimoires.Grimoires.domain.model
 
+import com.google.firebase.firestore.DocumentReference
+
 data class Campaign(
     val idCampaign: String = "",
     var accessCode: String = "",
@@ -7,7 +9,7 @@ data class Campaign(
     val genre: String = "",
     val description: String = "",
     val masterID: String = "",
-    val characters: List<String> = emptyList(),
-    val npcs: List<String> = emptyList(),
-    val notes: List<String> = emptyList()
+    val players: List<DocumentReference> = emptyList(),
+    val npcs: List<DocumentReference> = emptyList(),
+    val notes: List<DocumentReference> = emptyList()
 )

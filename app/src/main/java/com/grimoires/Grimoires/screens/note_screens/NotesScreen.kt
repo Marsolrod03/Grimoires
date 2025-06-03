@@ -70,24 +70,26 @@ fun NotesScreen(
             FloatingActionButton(
                 onClick = {
                     if (noteText.isNotBlank()) {
-                        campaignViewModel.addNote(
-                            campaignId = campaignId,
-                            text = noteText,
-                            authorId = authorId,
-                            authorName = authorName,
-                            onSuccess = {
-                                Toast.makeText(context, "Nota enviada", Toast.LENGTH_SHORT).show()
-                                campaignViewModel.sendNotificationToCampaign(
-                                    title = "Nueva nota en la campaña",
-                                    message = noteText,
-                                    senderId = authorId
-                                )
-                                noteText = ""
-                            },
-                            onError = {
-                                Toast.makeText(context, "Error: $it", Toast.LENGTH_SHORT).show()
-                            }
-                        )
+                        if (authorId != null) {
+                            campaignViewModel.addNote(
+                                campaignId = campaignId,
+                                text = noteText,
+                                authorId = authorId,
+                                authorName = authorName,
+                                onSuccess = {
+                                    Toast.makeText(context, "Nota enviada", Toast.LENGTH_SHORT).show()
+                                    campaignViewModel.sendNotificationToCampaign(
+                                        title = "Nueva nota en la campaña",
+                                        message = noteText,
+                                        senderId = authorId
+                                    )
+                                    noteText = ""
+                                },
+                                onError = {
+                                    Toast.makeText(context, "Error: $it", Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                        }
                     }
                 }
             ) {

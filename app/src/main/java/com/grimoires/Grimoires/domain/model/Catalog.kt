@@ -16,20 +16,17 @@ data class CharacterClass(
     val classId: String = "",
     val name: String = "",
     val description: String = "",
-    @get:PropertyName("abilities") @set:PropertyName("abilities")
-    var skills: List<String> = emptyList()
+    var abilities: List<String> = emptyList()
 )
 
 data class Race(
     val raceId: String = "",
     val description: String = "",
-    @get:PropertyName("race") @set:PropertyName("race")
-    var name: String = "",
+    var race: String = "",
     val size: String = "",
     val speed: Int = 0,
     val languages: List<String> = emptyList(),
-    @get:PropertyName("dark_vision") @set:PropertyName("dark_vision")
-    var darkvision: Boolean = false
+    var dark_vision: Boolean = false
 )
 
 data class Item(

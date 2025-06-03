@@ -44,7 +44,7 @@ fun CampaignCard(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Jugadores: ${campaign.characters.size}",
+                text = "Jugadores: ${campaign.players.size}",
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.Gray
             )

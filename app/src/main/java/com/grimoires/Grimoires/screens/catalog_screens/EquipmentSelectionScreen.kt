@@ -1,7 +1,9 @@
 package com.grimoires.Grimoires.screens.catalog_screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,15 +17,23 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -33,22 +43,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.material3.Scaffold
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.grimoires.Grimoires.domain.model.Item
 import com.grimoires.Grimoires.ui.models.CatalogViewModel
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.font.FontWeight
 import com.grimoires.Grimoires.ui.models.PlayableCharacterViewModel
+import com.grimoires.Grimoires.ui.theme.deepBrown
+import com.grimoires.Grimoires.ui.theme.leafGreen
+import com.grimoires.Grimoires.ui.theme.lightTan
+import com.grimoires.Grimoires.ui.theme.oak
+import com.grimoires.Grimoires.ui.theme.parchment
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EquipmentScreen(
+fun EquipmentSelectionScreen(
     navController: NavHostController,
     characterId: String,
     viewModel: CatalogViewModel = viewModel(LocalContext.current as ViewModelStoreOwner),
@@ -66,23 +81,34 @@ fun EquipmentScreen(
         if (selectedType == "All") allItems else allItems.filter { it.type == selectedType }
     }
 
+
     Scaffold(
+        containerColor = parchment,
         topBar = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFF8B3A2E))
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Equipment",
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    style = MaterialTheme.typography.headlineMedium
-                )
-            }
+            TopAppBar(
+                title = {
+                    Text(
+                        "Equipment",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Serif,
+                            letterSpacing = 2.sp,
+                            color = Color.White
+                        )
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            Icons.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = deepBrown)
+            )
         },
         bottomBar = {
             Box(
@@ -94,11 +120,12 @@ fun EquipmentScreen(
             ) {
                 Button(
                     onClick = {
-                        characterViewModel.saveSelectedItems(characterId, selectedItems)
+                        val itemIds = selectedItems.map { it.itemId }
+                        characterViewModel.saveSelectedItems(characterId, itemIds)
                         navController.popBackStack()
                     },
                     shape = RoundedCornerShape(30.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4C9A84))
+                    colors = ButtonDefaults.buttonColors(containerColor = leafGreen)
                 ) {
                     Text("SAVE EQUIPMENT", color = Color.White, letterSpacing = 2.sp)
                 }
@@ -108,15 +135,16 @@ fun EquipmentScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFE8D9C3))
+                .background(lightTan)
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp)
         ) {
+            Spacer(modifier = Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "ITEM TYPE:",
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF4C1F15),
+                    color = oak,
                     modifier = Modifier.padding(end = 8.dp)
                 )
                 EquipmentFilterDropdown(
@@ -132,8 +160,8 @@ fun EquipmentScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(Color(0xFFF9EFE1), RoundedCornerShape(16.dp))
-                    .border(4.dp, Color(0xFF8B3A2E), RoundedCornerShape(16.dp))
+                    .background(parchment, RoundedCornerShape(16.dp))
+                    .border(4.dp, deepBrown, RoundedCornerShape(16.dp))
                     .padding(12.dp)
             ) {
                 LazyColumn(
@@ -163,7 +191,6 @@ fun EquipmentScreen(
         }
     }
 }
-
 @Composable
 fun EquipmentFilterDropdown(
     itemTypes: List<String>,
@@ -176,7 +203,7 @@ fun EquipmentFilterDropdown(
         OutlinedButton(
             onClick = { expanded = true },
             shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF4C1F15))
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = oak)
         ) {
             Text(selectedType)
         }
@@ -184,16 +211,45 @@ fun EquipmentFilterDropdown(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.background(Color.White)
+            modifier = Modifier
+                .background(Color.Transparent)
+                .padding(horizontal = 8.dp)
         ) {
             itemTypes.forEach { type ->
-                DropdownMenuItem(
-                    text = { Text(type) },
-                    onClick = {
-                        onTypeSelected(type)
-                        expanded = false
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .clickable {
+                            onTypeSelected(type)
+                            expanded = false
+                        },
+                    shape = RoundedCornerShape(8.dp),
+                    colors = CardDefaults.cardColors(containerColor = parchment),
+                    border = BorderStroke(2.dp, deepBrown)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RetroCheckbox(
+                            checked = type == selectedType,
+                            onCheckedChange = {
+                                onTypeSelected(type)
+                                expanded = false
+                            }
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = type,
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = if (type == selectedType) FontWeight.Bold else FontWeight.Normal,
+                            color = deepBrown
+                        )
                     }
-                )
+                }
             }
         }
     }

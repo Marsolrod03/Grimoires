@@ -27,16 +27,15 @@ import androidx.navigation.NavHostController
 import com.grimoires.Grimoires.domain.model.Spell
 import com.grimoires.Grimoires.ui.models.CatalogViewModel
 import com.grimoires.Grimoires.ui.models.PlayableCharacterViewModel
+import com.grimoires.Grimoires.ui.theme.deepBrown
+import com.grimoires.Grimoires.ui.theme.leafGreen
+import com.grimoires.Grimoires.ui.theme.parchment
+import com.grimoires.Grimoires.ui.theme.textDark
 
-val parchment = Color(0xFFF3E6D0)
-val deepBrown = Color(0xFF803C2F)
-val leafGreen = Color(0xFF5B9B83)
-val lightTan = Color(0xFFD8C4A4)
-val textDark = Color(0xFF3C2F2F)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SpellsScreen(
+fun SpellsSelectionScreen(
     navController: NavHostController,
     characterClass: String,
     characterId: String,
@@ -74,7 +73,8 @@ fun SpellsScreen(
                         "Spells",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontSize = 28.sp,
-                            fontWeight = FontWeight.ExtraBold,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Serif,
                             letterSpacing = 2.sp,
                             color = Color.White
                         )
@@ -91,7 +91,8 @@ fun SpellsScreen(
         bottomBar = {
             Button(
                 onClick = {
-                    characterViewModel.saveSelectedSpells(characterId, selectedSpells)
+                    val spellsIds = selectedSpells.map { it.spellId }
+                    characterViewModel.saveSelectedSpells(characterId, spellsIds)
                     navController.popBackStack()
                 },
                 modifier = Modifier
@@ -105,7 +106,7 @@ fun SpellsScreen(
                 ),
                 enabled = selectedSpells.isNotEmpty()
             ) {
-                Text("SAVE STATS", fontWeight = FontWeight.Bold)
+                Text("SAVE SPELLS", fontWeight = FontWeight.Bold)
             }
         }
     ) { innerPadding ->

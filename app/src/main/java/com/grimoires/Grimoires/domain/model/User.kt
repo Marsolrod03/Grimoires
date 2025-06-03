@@ -1,6 +1,7 @@
 package com.grimoires.Grimoires.domain.model
 
 import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.DocumentReference
 
 data class User(
     @DocumentId val idUser: String = "",
@@ -8,6 +9,6 @@ data class User(
     var nickname: String = "",
     val email: String = "",
     val fcmToken: String = "",
-    val playedCampaigns: List<String> = emptyList(),
-    val charactersOwned: List<String> = emptyList()
+    val playedCampaigns: List<DocumentReference> = emptyList(),
+    val charactersOwned: List<DocumentReference> = emptyList()
 )

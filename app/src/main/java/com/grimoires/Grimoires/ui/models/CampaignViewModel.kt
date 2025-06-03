@@ -1,7 +1,11 @@
 package com.grimoires.Grimoires.viewmodel
 
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
@@ -10,7 +14,12 @@ import com.grimoires.Grimoires.data.network.NotificationService
 import com.grimoires.Grimoires.domain.model.Campaign
 import com.grimoires.Grimoires.domain.model.Note
 import com.grimoires.Grimoires.domain.model.User
+import com.grimoires.Grimoires.ui.models.UserViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class CampaignViewModel(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
@@ -35,6 +44,8 @@ class CampaignViewModel(
     val participants = _participants.asStateFlow()
 
     private var campaignsListener: ListenerRegistration? = null
+    private var playedCampaignsListener: ListenerRegistration? = null
+
 
     fun getCampaign(campaignId: String): Flow<Campaign?> {
         return firestore.collection("campaigns").document(campaignId)
@@ -42,128 +53,168 @@ class CampaignViewModel(
             .map { it.toObject(Campaign::class.java) }
     }
 
-    fun loadMasteredCampaigns(currentUserId: String) {
+    fun loadMasteredCampaigns(userId: String) {
         firestore.collection("campaigns")
-            .whereEqualTo("masterID", currentUserId)
+            .whereEqualTo("masterID", userId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     _errorMessage.value = "Error: ${error.message}"
                     return@addSnapshotListener
                 }
-                val campaigns = snapshot?.documents?.mapNotNull { doc ->
-                    val title = doc.getString("title") ?: ""
-                    val description = doc.getString("description") ?: ""
-                    val masterID = doc.getString("masterID") ?: ""
-                    val accessCode = doc.getString("accessCode") ?: ""
-                    val characters = doc.get("characters") as? List<String> ?: emptyList()
 
+                val campaigns = snapshot?.documents?.mapNotNull { doc ->
                     Campaign(
                         idCampaign = doc.id,
-                        title = title,
-                        description = description,
-                        masterID = masterID,
-                        accessCode = accessCode,
-                        characters = characters
+                        title = doc.getString("title") ?: "",
+                        description = doc.getString("description") ?: "",
+                        masterID = doc.getString("masterID") ?: "",
+                        accessCode = doc.getString("accessCode") ?: "",
+                        players = doc.get("players") as? List<DocumentReference> ?: emptyList()
                     )
                 } ?: emptyList()
+
                 _masteredCampaigns.value = campaigns
             }
     }
 
-    fun loadPlayedCampaigns(currentUserCharacterId: String) {
-        firestore.collection("campaigns")
-            .whereArrayContains("characters", currentUserCharacterId)
+    fun loadPlayedCampaigns(userId: String) {
+        val userRef = firestore.collection("users").document(userId)
+
+        playedCampaignsListener = firestore.collection("campaigns")
+            .whereArrayContains("players", userRef)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     _errorMessage.value = "Error: ${error.message}"
                     return@addSnapshotListener
                 }
-                val campaigns = snapshot?.documents?.mapNotNull {
-                    it.toObject(Campaign::class.java)?.copy(idCampaign = it.id)
+
+                val campaigns = snapshot?.documents?.mapNotNull { doc ->
+                    Campaign(
+                        idCampaign = doc.id,
+                        title = doc.getString("title") ?: "",
+                        description = doc.getString("description") ?: "",
+                        masterID = doc.getString("masterID") ?: "",
+                        accessCode = doc.getString("accessCode") ?: "",
+                        players = doc.get("players") as? List<DocumentReference> ?: emptyList()
+                    )
                 } ?: emptyList()
+
                 _playedCampaigns.value = campaigns
             }
-    }
-
-    fun joinCampaign(
-        campaignId: String,
-        characterId: String,
-        onSuccess: () -> Unit,
-        onError: (String) -> Unit
-    ) {
-        val campaignRef = firestore.collection("campaigns").document(campaignId)
-
-        firestore.runTransaction { transaction ->
-            val campaignSnapshot = transaction.get(campaignRef)
-            val campaign = campaignSnapshot.toObject(Campaign::class.java)
-                ?: throw Exception("Campaign not found")
-            if (campaign.characters.contains(characterId)) {
-                throw Exception("Este personaje ya está en la campaña")
-            }
-            val updatedCharacters = campaign.characters.toMutableList()
-            updatedCharacters.add(characterId)
-            transaction.update(campaignRef, "characters", updatedCharacters)
-        }.addOnSuccessListener {
-            onSuccess()
-        }.addOnFailureListener { e ->
-            onError(e.message ?: "Error uniendo personaje a campaña")
-        }
     }
 
     fun createNewCampaign(
         title: String,
         description: String,
         masterId: String,
-        code: String,
+        accessCode: String,
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
-        val campaign = Campaign(
-            idCampaign = "",
-            title = title,
-            description = description,
-            masterID = masterId,
-            accessCode = code,
-            characters = listOf(masterId)
-        )
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val masterRef = firestore.collection("users").document(masterId)
 
-        firestore.collection("campaigns")
-            .add(campaign)
-            .addOnSuccessListener { document ->
-                firestore.collection("campaigns").document(document.id)
-                    .update("idCampaign", document.id)
+                val newCampaign = hashMapOf(
+                    "title" to title,
+                    "description" to description,
+                    "masterID" to masterId,
+                    "accessCode" to accessCode,
+                    "players" to listOf(masterRef)
+                )
+
+                firestore.collection("campaigns")
+                    .add(newCampaign)
+                    .await()
+
                 onSuccess()
+            } catch (e: Exception) {
+                onError("Error al crear campaña: ${e.message}")
+            } finally {
+                _isLoading.value = false
             }
-            .addOnFailureListener {
-                onError(it.message ?: "Error al guardar campaña")
-            }
+        }
     }
 
-    fun getCampaignByCode(
-        code: String,
+    fun getCampaignByAccessCode(
+        accessCode: String,
         onSuccess: (Campaign) -> Unit,
-        onError: () -> Unit
+        onError: (String) -> Unit
     ) {
         firestore.collection("campaigns")
-            .whereEqualTo("accessCode", code)
+            .whereEqualTo("accessCode", accessCode)
             .limit(1)
             .get()
             .addOnSuccessListener { result ->
                 if (!result.isEmpty) {
                     val doc = result.documents[0]
-                    val campaign = doc.toObject(Campaign::class.java)?.copy(idCampaign = doc.id)
-                    if (campaign != null) {
+                    try {
+                        val playersRaw = doc.get("players") as? List<*> ?: emptyList<Any>()
+                        val players = playersRaw.mapNotNull {
+                            when (it) {
+                                is DocumentReference -> it
+                                is String -> firestore.document("users/$it")
+                                else -> null
+                            }
+                        }
+
+                        val campaign = Campaign(
+                            idCampaign = doc.id,
+                            title = doc.getString("title") ?: "",
+                            description = doc.getString("description") ?: "",
+                            genre = doc.getString("genre") ?: "",
+                            masterID = doc.getString("masterID") ?: "",
+                            accessCode = doc.getString("accessCode") ?: "",
+                            players = players
+                        )
+
                         onSuccess(campaign)
-                    } else {
-                        onError()
+                    } catch (e: Exception) {
+                        onError("Error al deserializar campaña: ${e.message}")
                     }
                 } else {
-                    onError()
+                    onError("Código de acceso inválido")
                 }
             }
             .addOnFailureListener {
-                onError()
+                onError("Error de conexión: ${it.message}")
             }
+    }
+
+    fun joinCampaign(
+        campaign: Campaign,
+        userId: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val campaignRef = firestore.collection("campaigns").document(campaign.idCampaign)
+                val userRef = firestore.collection("users").document(userId)
+
+                firestore.runTransaction { transaction ->
+                    val snapshot = transaction.get(campaignRef)
+
+                    val playersRaw = snapshot.get("players") as? List<*> ?: emptyList<Any>()
+                    val currentPlayers = playersRaw.filterIsInstance<DocumentReference>()
+
+                    if (currentPlayers.any { it.id == userId }) {
+                        throw Exception("Ya estás en esta campaña")
+                    }
+
+                    val updatedPlayers = currentPlayers + userRef
+                    transaction.update(campaignRef, "players", updatedPlayers)
+                }.await()
+
+                onSuccess()
+            } catch (e: Exception) {
+                onError(e.message ?: "Error uniéndose a la campaña")
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 
     fun getNotes(campaignId: String): Flow<List<Note>> {
@@ -205,32 +256,24 @@ class CampaignViewModel(
     }
 
     fun loadCampaignParticipants(campaignId: String) {
-        firestore.collection("campaigns").document(campaignId).get()
-            .addOnSuccessListener { doc ->
-                val characterIds = doc.get("characters") as? List<String> ?: emptyList()
-                if (characterIds.isNotEmpty()) {
-                    firestore.collection("characters")
-                        .whereIn("characterId", characterIds)
-                        .get()
-                        .addOnSuccessListener { charsSnapshot ->
-                            val userIds = charsSnapshot.documents.mapNotNull {
-                                it.getString("userId")
-                            }.distinct()
+        viewModelScope.launch {
+            try {
+                val campaignDoc =
+                    firestore.collection("campaigns").document(campaignId).get().await()
+                val playerRefs =
+                    campaignDoc.get("players") as? List<DocumentReference> ?: emptyList()
 
-                            if (userIds.isNotEmpty()) {
-                                firestore.collection("users")
-                                    .whereIn("idUser", userIds)
-                                    .get()
-                                    .addOnSuccessListener { usersSnapshot ->
-                                        val users = usersSnapshot.documents.mapNotNull { doc ->
-                                            doc.toObject(User::class.java)
-                                        }
-                                        _participants.value = users
-                                    }
-                            }
-                        }
-                }
+                val users = playerRefs.map { ref ->
+                    async {
+                        ref.get().await().toObject(User::class.java)?.copy(idUser = ref.id)
+                    }
+                }.awaitAll().filterNotNull()
+
+                _participants.value = users
+            } catch (e: Exception) {
+                _errorMessage.value = "Error loading participants: ${e.message}"
             }
+        }
     }
 
     fun sendNotificationToCampaign(
@@ -239,7 +282,7 @@ class CampaignViewModel(
         senderId: String
     ) {
         val tokens = _participants.value
-            .filter { it.idUser!= senderId && it.fcmToken.isNotBlank() }
+            .filter { it.idUser != senderId && it.fcmToken.isNotBlank() }
             .map { it.fcmToken }
 
         if (tokens.isNotEmpty()) {
@@ -253,6 +296,17 @@ class CampaignViewModel(
 
     override fun onCleared() {
         campaignsListener?.remove()
+        playedCampaignsListener?.remove()
         super.onCleared()
+    }
+}
+
+class CampaignViewModelFactory : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(CampaignViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return CampaignViewModel() as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

@@ -1,5 +1,6 @@
 package com.grimoires.Grimoires.screens.calculator
 
+import HandleMenu
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,15 +39,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.grimoires.Grimoires.domain.model.Dice
+
 import com.grimoires.Grimoires.ui.element_views.CustomDrawerContent
 import com.grimoires.Grimoires.ui.element_views.DiceView
 import com.grimoires.Grimoires.ui.element_views.RollResultItem
 import com.grimoires.Grimoires.ui.models.UserViewModel
+import com.grimoires.Grimoires.ui.theme.deepBrown
+import com.grimoires.Grimoires.ui.theme.parchment
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
@@ -69,9 +74,6 @@ fun DiceCalculatorScreen(navController: NavHostController) {
     val rollResults = remember { mutableStateListOf<Pair<Int, Int>>() }
     val userViewModel: UserViewModel = viewModel()
     val nickname = userViewModel.nickname
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
-
 
     fun rollDice(diceIndex: Int) {
         val dice = dice[diceIndex]
@@ -90,29 +92,18 @@ fun DiceCalculatorScreen(navController: NavHostController) {
         rollResults.clear()
     }
 
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            CustomDrawerContent(
-                nickname = nickname,
-                onOptionSelected = { option ->
-                    when (option) {
-                        "MY CHARACTERS" -> navController.navigate("characters")
-                        "MY CAMPAIGNS" -> navController.navigate("campaigns")
-                        "THE LIBRARY" -> navController.navigate("library")
-                        "DICE CALCULATOR" -> navController.navigate("calculator")
-                        "profile" -> navController.navigate("userProfileSection")
-                    }
-                    scope.launch { drawerState.close() }
-                }
-            )
-
-        }
-    ) {
+    HandleMenu(nickname, navController) { scope, drawerState ->
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Grimoires", color = Color.White) },
+                    title = {
+                        Text(
+                            "Calculator",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Serif
+                        )
+                    },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
                             Icon(
@@ -123,7 +114,7 @@ fun DiceCalculatorScreen(navController: NavHostController) {
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color(0xFFB44B33),
+                        containerColor = deepBrown,
                         titleContentColor = Color.White
                     )
                 )
@@ -132,8 +123,9 @@ fun DiceCalculatorScreen(navController: NavHostController) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .background(parchment)
                         .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    horizontalArrangement = Arrangement.SpaceEvenly,
                 ) {
 
                     Spacer(modifier = Modifier.width(16.dp))
@@ -141,12 +133,12 @@ fun DiceCalculatorScreen(navController: NavHostController) {
                     Button(
                         onClick = { resetDice() },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFB44B33),
+                            containerColor = deepBrown,
                             contentColor = Color.White
                         ),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("RESET")
+                        Text("RESET", fontFamily = FontFamily.Serif)
                     }
                 }
             }
@@ -155,7 +147,7 @@ fun DiceCalculatorScreen(navController: NavHostController) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .background(color = Color(0xFFF7E9D4))
+                    .background(color = parchment)
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -199,6 +191,7 @@ fun DiceCalculatorScreen(navController: NavHostController) {
                     text = "ROLL RESULTS",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Serif,
                     color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
@@ -207,6 +200,7 @@ fun DiceCalculatorScreen(navController: NavHostController) {
                     Text(
                         text = "Click on dice to roll them",
                         style = MaterialTheme.typography.bodyLarge,
+                        fontFamily = FontFamily.Serif,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                         modifier = Modifier.padding(16.dp)
                     )
