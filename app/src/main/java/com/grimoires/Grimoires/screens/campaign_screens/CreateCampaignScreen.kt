@@ -120,11 +120,10 @@ fun CreateCampaignScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            "Grimoires",
+                            "NEW CAMPAIGN",
                             style = TextStyle(
                                 fontFamily = FontFamily.Serif,
-                                fontSize = 26.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontSize = 24.sp,
                                 color = Color.White,
                                 shadow = Shadow(blurRadius = 4f, color = Color.Black)
                             ),

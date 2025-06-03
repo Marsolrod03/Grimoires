@@ -14,8 +14,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.grimoires.Grimoires.R
@@ -23,6 +28,11 @@ import com.grimoires.Grimoires.domain.model.Campaign
 import com.grimoires.Grimoires.ui.element_views.CampaignCard
 import com.grimoires.Grimoires.ui.element_views.FullScreenLoading
 import com.grimoires.Grimoires.ui.models.UserViewModel
+import com.grimoires.Grimoires.ui.theme.deepBrown
+import com.grimoires.Grimoires.ui.theme.leafGreen
+import com.grimoires.Grimoires.ui.theme.lightTan
+import com.grimoires.Grimoires.ui.theme.oak
+import com.grimoires.Grimoires.ui.theme.parchment
 import com.grimoires.Grimoires.viewmodel.CampaignViewModel
 import kotlinx.coroutines.launch
 
@@ -66,18 +76,27 @@ fun CampaignScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            "Grimoires",
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = Color.White
+                            "GRIMOIRES",
+                            style = TextStyle(
+                                fontFamily = FontFamily.Serif,
+                                fontSize = 24.sp,
+                                color = Color.White,
+                                shadow = Shadow(blurRadius = 4f, color = Color.Black)
+                            )
                         )
+
                     },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Color.White)
+                            Icon(
+                                Icons.Default.Menu,
+                                contentDescription = "Menu",
+                                tint = Color.White
+                            )
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color(0xFFB44B33),
+                        containerColor = deepBrown,
                         titleContentColor = Color.White,
                         navigationIconContentColor = Color.White
                     )
@@ -89,6 +108,7 @@ fun CampaignScreen(
                 } else {
                     Column(
                         modifier = Modifier
+                            .background(lightTan)
                             .fillMaxSize()
                             .padding(innerPadding)
                     ) {
@@ -99,7 +119,7 @@ fun CampaignScreen(
                             indicator = { tabPositions ->
                                 TabRowDefaults.Indicator(
                                     Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                                    color = Color(0xFFB44B33)
+                                    color = deepBrown
                                 )
                             }
                         ) {
@@ -107,12 +127,13 @@ fun CampaignScreen(
                                 selected = selectedTab == 0,
                                 onClick = { selectedTab = 0 },
                                 modifier = Modifier.background(
-                                    if (selectedTab == 0) Color(0xFFB44B33) else Color.LightGray
+                                    if (selectedTab == 0) oak else deepBrown
                                 ),
                                 text = {
                                     Text(
                                         "MASTERED",
-                                        color = if (selectedTab == 0) Color.White else Color.Black
+                                        fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif,
+                                        color = if (selectedTab == 0) Color.White else parchment
                                     )
                                 }
                             )
@@ -120,12 +141,13 @@ fun CampaignScreen(
                                 selected = selectedTab == 1,
                                 onClick = { selectedTab = 1 },
                                 modifier = Modifier.background(
-                                    if (selectedTab == 1) Color(0xFFB44B33) else Color.LightGray
+                                    if (selectedTab == 1) oak else deepBrown
                                 ),
                                 text = {
                                     Text(
                                         "PLAYED",
-                                        color = if (selectedTab == 1) Color.White else Color.Black
+                                        fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif,
+                                        color = if (selectedTab == 1) Color.White else parchment
                                     )
                                 }
                             )
@@ -141,6 +163,7 @@ fun CampaignScreen(
                                 emptyMessage = "No mastered campaigns",
                                 emptyButtonText = "CREATE CAMPAIGN"
                             )
+
                             1 -> CampaignList(
                                 campaigns = playedCampaigns,
                                 onCampaignClick = { campaign ->
@@ -184,13 +207,12 @@ fun CampaignList(
                         painter = painterResource(id = R.drawable.d20),
                         contentDescription = null,
                         modifier = Modifier.size(64.dp),
-                        tint = Color(0xFF8B3A2E)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = emptyMessage,
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color(0xFF8B3A2E)
+                        color = deepBrown
                     )
                 }
             }
@@ -211,7 +233,7 @@ fun CampaignList(
             onClick = onAddClick,
             modifier = Modifier.align(Alignment.CenterHorizontally),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5F9E8F))
+            colors = ButtonDefaults.buttonColors(containerColor = leafGreen)
         ) {
             Text(text = emptyButtonText, color = Color.White)
         }

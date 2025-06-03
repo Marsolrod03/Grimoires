@@ -4,6 +4,7 @@ package com.grimoires.Grimoires
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -40,7 +41,10 @@ import com.grimoires.Grimoires.screens.library_screen.ItemDetailScreen
 import com.grimoires.Grimoires.screens.library_screen.LibraryScreen
 import com.grimoires.Grimoires.screens.library_screen.RaceDetailScreen
 import com.grimoires.Grimoires.screens.library_screen.SpellDetailScreen
-import com.grimoires.Grimoires.screens.note_screens.NotesScreen
+import com.grimoires.Grimoires.screens.npc_screens.NpcCreationScreen
+import com.grimoires.Grimoires.screens.npc_screens.NpcDetailScreen
+import com.grimoires.Grimoires.screens.npc_screens.NpcManagementScreen
+
 import com.grimoires.Grimoires.ui.element_views.FullScreenLoading
 import com.grimoires.Grimoires.ui.models.CatalogViewModel
 import com.grimoires.Grimoires.ui.models.LoginViewModel
@@ -202,6 +206,47 @@ fun MyApp() {
                 characterClass = characterClass,
                 characterId = characterId
             )
+        }
+
+        composable("characterSheet/{characterId}") { backStackEntry ->
+            val characterId = backStackEntry.arguments?.getString("characterId") ?: return@composable
+
+            val playableCharacterViewModel: PlayableCharacterViewModel = viewModel()
+            val character by playableCharacterViewModel.currentCharacter.collectAsState()
+            val isLoading by playableCharacterViewModel.isLoading.collectAsState()
+
+            LaunchedEffect(characterId) {
+                playableCharacterViewModel.loadCharacterById(characterId)
+            }
+
+            if (isLoading) {
+                Text("Loading character...")
+            } else if (character != null) {
+                CharacterSheetScreen(
+                    character = character!!,
+                    catalogViewModel = catalogViewModel,
+                    statsViewModel = statsViewModel,
+                    onEditClick = { /* lógica de edición */ },
+                    navController = navController
+                )
+            } else {
+                Text("Character not found.")
+            }
+        }
+
+        composable("npcs/{campaignId}") { backStackEntry ->
+            val campaignId = backStackEntry.arguments?.getString("campaignId") ?: ""
+            NpcManagementScreen(campaignId, navController)
+        }
+
+        composable("create_npc/{campaignId}") { backStackEntry ->
+            val campaignId = backStackEntry.arguments?.getString("campaignId") ?: ""
+            NpcCreationScreen(campaignId, navController)
+        }
+
+        composable("npc_detail/{npcId}") { backStackEntry ->
+            val npcId = backStackEntry.arguments?.getString("npcId") ?: ""
+            NpcDetailScreen(npcId, navController)
         }
 
         composable(

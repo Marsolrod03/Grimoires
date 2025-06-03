@@ -59,8 +59,6 @@ class UserViewModel : ViewModel() {
     }
 
 
-
-
     fun setCurrentCharacter(characterId: String) {
         _currentCharacterId.value = characterId
         val uid = auth.currentUser?.uid ?: return

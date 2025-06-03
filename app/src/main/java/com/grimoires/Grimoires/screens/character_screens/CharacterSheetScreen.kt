@@ -70,7 +70,7 @@ fun CharacterSheetScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(character.name, fontSize = 24.sp, fontWeight = FontWeight.Bold, fontFamily = Serif) },
+                title = { Text(character.characterName, fontSize = 24.sp, fontWeight = FontWeight.Bold, fontFamily = Serif) },
                 actions = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
@@ -97,7 +97,7 @@ fun CharacterSheetScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            LabeledText("NAME", character.name)
+            LabeledText("NAME", character.characterName)
             LabeledText("RACE", character.race)
             LabeledText("CLASS", character.characterClass)
             LabeledText("LEVEL", character.level.toString())

@@ -13,3 +13,10 @@ data class Campaign(
     val npcs: List<DocumentReference> = emptyList(),
     val notes: List<DocumentReference> = emptyList()
 )
+
+data class Participant(
+    val userId: String,
+    val nickname: String,
+    val characterName: String,
+    val characterID: String
+)

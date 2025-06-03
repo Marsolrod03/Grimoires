@@ -89,7 +89,7 @@ onBackClick: () -> Unit
             TopAppBar(
                 title = {
                     Text(
-                        "${character?.name ?: "Character"}'s Spells",
+                        "${character?.characterName ?: "Character"}'s Spells",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = Serif,

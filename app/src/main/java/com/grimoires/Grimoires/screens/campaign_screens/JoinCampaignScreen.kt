@@ -1,12 +1,20 @@
 package com.grimoires.Grimoires.ui.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.grimoires.Grimoires.ui.models.UserViewModel
@@ -14,6 +22,7 @@ import com.grimoires.Grimoires.viewmodel.CampaignViewModel
 import com.grimoires.Grimoires.domain.model.PlayableCharacter
 import com.grimoires.Grimoires.ui.models.PlayableCharacterViewModel
 import com.grimoires.Grimoires.ui.theme.deepBrown
+import com.grimoires.Grimoires.ui.theme.lightTan
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,9 +50,28 @@ fun JoinCampaignScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Join Campaign", color = Color.White) },
+                title = {
+                    Text(
+                        "JOIN CAMPAIGN",
+                        style = TextStyle(
+                            fontFamily = FontFamily.Serif,
+                            fontSize = 24.sp,
+                            color = Color.White,
+                            shadow = Shadow(blurRadius = 4f, color = Color.Black)
+                        )
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFB44B33),
+                    containerColor = deepBrown,
                     titleContentColor = Color.White
                 )
             )
@@ -53,6 +81,7 @@ fun JoinCampaignScreen(
 
         Column(
             modifier = Modifier
+                .background(lightTan)
                 .fillMaxSize()
                 .padding(padding)
                 .padding(16.dp),
@@ -65,7 +94,7 @@ fun JoinCampaignScreen(
                 onExpandedChange = { expanded = !expanded }
             ) {
                 OutlinedTextField(
-                    value = selectedCharacter?.name ?: "Selecciona personaje",
+                    value = selectedCharacter?.characterName ?: "Selecciona personaje",
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Personaje") },
@@ -80,7 +109,7 @@ fun JoinCampaignScreen(
                 ) {
                     characters.forEach { character ->
                         DropdownMenuItem(
-                            text = { Text(character.name) },
+                            text = { Text(character.characterName) },
                             onClick = {
                                 selectedCharacter = character
                                 expanded = false
@@ -118,7 +147,8 @@ fun JoinCampaignScreen(
                         accessCode = campaignCode.value,
                         onSuccess = { campaign ->
                             campaignViewModel.joinCampaign(
-                                campaign = campaign,
+                                accessCode = campaignCode.value,
+                                characterName = selectedCharacter?.characterName ?: "",
                                 userId = currentUserId,
                                 onSuccess = {
                                     scope.launch {
@@ -148,7 +178,7 @@ fun JoinCampaignScreen(
                     contentColor = Color.White
                 )
             ) {
-                Text("JOIN")
+                Text("JOIN",fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif)
             }
         }
     }

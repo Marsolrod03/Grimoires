@@ -72,7 +72,7 @@ fun EquipmentScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "${character?.name ?: "Character"}'s Inventory",
+                        "${character?.characterName ?: "Character"}'s Inventory",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = Serif,

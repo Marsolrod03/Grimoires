@@ -182,7 +182,7 @@ fun AddCharacterScreen(
 
                     val character = PlayableCharacter(
                         characterId = characterId,
-                        name = name,
+                        characterName = name,
                         characterClass = charClass,
                         race = race,
                         alignment = alignment,

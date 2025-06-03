@@ -12,8 +12,11 @@ import com.google.firebase.firestore.firestore
 import com.grimoires.Grimoires.domain.model.Item
 import com.grimoires.Grimoires.domain.model.PlayableCharacter
 import com.grimoires.Grimoires.domain.model.Spell
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.tasks.await
 
 
 class PlayableCharacterViewModel : ViewModel() {
@@ -106,6 +109,16 @@ class PlayableCharacterViewModel : ViewModel() {
             .addOnFailureListener {
                 Log.e("Firestore", "Failed to save inventory.", it)
             }
+    }
+
+    fun getCharacter(characterId: String): Flow<PlayableCharacter?> = flow {
+        val snapshot = FirebaseFirestore.getInstance()
+            .collection("characters")
+            .document(characterId)
+            .get()
+            .await()
+
+        emit(snapshot.toObject(PlayableCharacter::class.java))
     }
 
     fun saveSelectedSpells(characterId: String, spellIds: List<String>) {
