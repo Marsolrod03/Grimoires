@@ -96,7 +96,7 @@ fun CreateCampaignScreen(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet(
-                drawerContainerColor = Color(0xFFF5F5F5)
+                drawerContainerColor = parchment
             ) {
                 CustomDrawerContent(
                     nickname = "Usuario",

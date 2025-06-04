@@ -33,12 +33,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.grimoires.Grimoires.R
+import com.grimoires.Grimoires.ui.theme.deepBrown
+import com.grimoires.Grimoires.ui.theme.lightTan
 
 
 @Composable
 fun ForgotPasswordScreen(navController: NavHostController) {
-    val backgroundColor = Color(0xFFA64834)
-    val lightBackground = Color(0xFFFDF1E3)
+    val backgroundColor = deepBrown
+    val lightBackground = lightTan
     val primaryTextColor = Color.White
 
     var email by remember { mutableStateOf("") }
@@ -83,7 +85,7 @@ fun ForgotPasswordScreen(navController: NavHostController) {
 
 
             Image(
-                painter = painterResource(id = R.drawable.chest), // 🧠 Asegúrate de tener chest.png en drawable
+                painter = painterResource(id = R.drawable.chest),
                 contentDescription = null,
                 modifier = Modifier
                     .size(120.dp)
@@ -129,7 +131,7 @@ fun ForgotPasswordScreen(navController: NavHostController) {
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = { /* Acción para enviar el correo */ },
+            onClick = { },
             shape = RoundedCornerShape(50),
             colors = ButtonDefaults.buttonColors(
                 containerColor = backgroundColor
