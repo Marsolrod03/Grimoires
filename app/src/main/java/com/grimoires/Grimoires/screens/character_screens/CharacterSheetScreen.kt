@@ -1,5 +1,6 @@
 package com.grimoires.Grimoires.screens.character_screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -31,12 +33,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.grimoires.Grimoires.domain.model.PlayableCharacter
 import androidx.compose.material3.Divider
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontFamily.Companion.Serif
+import androidx.navigation.NavController
 
 import com.grimoires.Grimoires.domain.model.Attributes
 import com.grimoires.Grimoires.ui.models.CatalogViewModel
+import com.grimoires.Grimoires.ui.models.StatsViewModel
+import com.grimoires.Grimoires.ui.theme.deepBrown
+import com.grimoires.Grimoires.ui.theme.oak
+import com.grimoires.Grimoires.ui.theme.parchment
+import com.grimoires.Grimoires.domain.model.Item
+import com.grimoires.Grimoires.domain.model.Spell
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,23 +58,43 @@ import com.grimoires.Grimoires.ui.models.CatalogViewModel
 fun CharacterSheetScreen(
     character: PlayableCharacter,
     catalogViewModel: CatalogViewModel,
-    onEditClick: () -> Unit
+    statsViewModel: StatsViewModel,
+    onEditClick: () -> Unit,
+    navController: NavController
 ) {
 
+    val attributes = statsViewModel.attributes
+    val items by remember { mutableStateOf<List<Item>>(emptyList()) }
+    val spells by remember { mutableStateOf<List<Spell>>(emptyList()) }
+
+    LaunchedEffect(character.characterId) {
+        statsViewModel.loadAttributes(character.characterId)
+        statsViewModel.loadItemsForCharacter(character.characterId)
+        statsViewModel.loadSpellsForCharacter(character.characterId)
+
+    }
     val classList by catalogViewModel.classes.collectAsState()
-    val characterClass = classList.find { it.name == character.characterClass }
+    val characterClass = classList.find { it.name.trim().equals(character.characterClass.trim(), ignoreCase = true) }
+
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(character.name, fontSize = 24.sp, fontWeight = FontWeight.Bold) },
+                title = { Text(character.characterName, fontSize = 24.sp, fontFamily = Serif) },
                 actions = {
-                    IconButton(onClick = onEditClick) {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
+                    }
+                    IconButton(onClick = {navController.navigate("edit_character/${character.characterId}")}) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit Character", tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF8B3A2E),
+                    containerColor = deepBrown,
                     titleContentColor = Color.White
                 )
             )
@@ -68,19 +102,23 @@ fun CharacterSheetScreen(
     ) { innerPadding ->
         Column(
             modifier = Modifier
+                .background(parchment)
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(16.dp)
+
         ) {
-            LabeledText("NAME", character.name)
+            LabeledText("NAME", character.characterName)
             LabeledText("RACE", character.race)
             LabeledText("CLASS", character.characterClass)
             LabeledText("LEVEL", character.level.toString())
             LabeledText("ALIGNMENT", character.alignment)
 
             Spacer(modifier = Modifier.height(16.dp))
-            Text("ATTRIBUTES:", style = MaterialTheme.typography.titleMedium, color = Color(0xFF8B3A2E))
-
+            Text("ATTRIBUTES:", style = MaterialTheme.typography.titleMedium, color = deepBrown, fontFamily = Serif, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(6.dp))
+            Divider(modifier = Modifier.fillMaxWidth(), thickness = 1.dp, color = oak)
+            Spacer(modifier = Modifier.height(6.dp))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -95,30 +133,65 @@ fun CharacterSheetScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            Text("STATS:", style = MaterialTheme.typography.titleMedium, color = Color(0xFF8B3A2E))
-
-            StatsGrid(attributes = character.attributes)
+            Text("STATS:", style = MaterialTheme.typography.titleMedium, color = deepBrown,fontWeight = FontWeight.Bold, fontFamily = Serif)
+            Spacer(modifier = Modifier.height(6.dp))
+            Divider(modifier = Modifier.fillMaxWidth(), thickness = 1.dp, color = oak)
+            Spacer(modifier = Modifier.height(6.dp))
+            StatsGrid(attributes = attributes)
 
             Spacer(modifier = Modifier.height(32.dp))
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Button(
-                    onClick = { /* TODO: Navigate to Equipment */ },
-                    shape = RoundedCornerShape(50),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B3A2E))
-                ) {
-                    Text("EQUIPMENT", color = Color.White)
+                Text("EQUIPMENT", fontWeight = FontWeight.Bold, fontSize = 16.sp, fontFamily = Serif, color = deepBrown)
+                TextButton(onClick = {
+                    navController.navigate("equipment_select/${character!!.characterId}")
+                }) {
+                    Text("My Equipment", color = deepBrown, fontFamily = Serif)
                 }
+                Spacer(modifier = Modifier.height(6.dp))
+                Divider(modifier = Modifier.fillMaxWidth(), thickness = 1.dp, color = oak)
+                Spacer(modifier = Modifier.height(6.dp))
+            }
 
-                Button(
-                    onClick = { /* TODO: Navigate to Spells */ },
-                    shape = RoundedCornerShape(50),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B3A2E))
-                ) {
-                    Text("SPELLS", color = Color.White)
+            if (items.isEmpty()) {
+
+            } else {
+                items.take(3).forEach { item ->
+                    Text("• ${item.name}", fontFamily = Serif)
+                }
+                if (items.size > 3) {
+                    Text("...and ${items.size - 3} more", fontFamily = Serif)
+                }
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("SPELLS", fontWeight = FontWeight.Bold, fontSize = 16.sp, fontFamily = Serif,color = deepBrown)
+                TextButton(onClick = {
+                    navController.navigate("spells_select/${character!!.characterId}/${character!!.characterClass}")
+                }) {
+                    Text("My Spells", color = deepBrown, fontFamily = Serif)
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+                Divider(modifier = Modifier.fillMaxWidth(), thickness = 1.dp, color = oak)
+                Spacer(modifier = Modifier.height(6.dp))
+            }
+
+            if (spells.isEmpty()) {
+
+            } else {
+                spells.take(3).forEach { spell ->
+                    Text("• ${spell.name} (Lv ${spell.level})", fontFamily = Serif)
+                }
+                if (spells.size > 3) {
+                    Text("...and ${spells.size - 3} more", fontFamily = Serif)
                 }
             }
         }
@@ -128,34 +201,36 @@ fun CharacterSheetScreen(
 @Composable
 fun LabeledText(label: String, value: String) {
     Column(modifier = Modifier.padding(vertical = 4.dp)) {
-        Text("$label:", color = Color(0xFF8B3A2E), fontWeight = FontWeight.Bold)
-        Divider(modifier = Modifier.fillMaxWidth(), thickness = 1.dp, color = Color.Black)
-        Text(value, modifier = Modifier.padding(start = 8.dp))
+        Text("$label:", color = deepBrown, fontWeight = FontWeight.Bold, fontFamily = Serif,fontSize = 16.sp)
+        Spacer(modifier = Modifier.height(4.dp))
+        Divider(modifier = Modifier.fillMaxWidth(), thickness = 1.dp, color = oak)
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(value, modifier = Modifier.padding(start = 8.dp), color = Color.Black, fontFamily = Serif)
     }
 }
-
 @Composable
 fun StatsGrid(attributes: Attributes) {
-    val statLabels = listOf("STR", "DEX", "CON", "INT", "WIS", "CHA")
-    val statValues = listOf(
-        attributes.strength,
-        attributes.dexterity,
-        attributes.constitution,
-        attributes.intelligence,
-        attributes.wisdom,
-        attributes.charisma
+    fun calculateBonus(score: Int): Int = (score - 10) / 2
+
+    val stats = listOf(
+        "STR" to calculateBonus(attributes.strength),
+        "DEX" to calculateBonus(attributes.dexterity),
+        "CON" to calculateBonus(attributes.constitution),
+        "INT" to calculateBonus(attributes.intelligence),
+        "WIS" to calculateBonus(attributes.wisdom),
+        "CHA" to calculateBonus(attributes.charisma)
     )
 
-    Column {
-        for (i in statLabels.indices step 2) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Text("${statLabels[i]}  ${statValues[i]}")
-                Text("${statLabels[i + 1]}  ${statValues[i + 1]}")
+    stats.chunked(2).forEach { rowStats ->
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            rowStats.forEach { (label, bonus) ->
+                val formattedBonus = if (bonus >= 0) "+$bonus" else "$bonus"
+                Text("$label: $formattedBonus", fontWeight = FontWeight.Medium)
             }
-            Spacer(modifier = Modifier.height(8.dp))
         }
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }

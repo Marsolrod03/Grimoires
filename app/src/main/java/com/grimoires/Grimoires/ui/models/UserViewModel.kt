@@ -1,50 +1,83 @@
 package com.grimoires.Grimoires.ui.models
 
-import android.util.Log
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-
+import com.google.firebase.messaging.FirebaseMessaging
+import com.grimoires.Grimoires.domain.model.PlayableCharacter
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 class UserViewModel : ViewModel() {
 
-    private val db = FirebaseFirestore.getInstance()
+
+
     private val auth = FirebaseAuth.getInstance()
+    private val db = FirebaseFirestore.getInstance()
 
-    var username by mutableStateOf("")
+    var characters = mutableStateOf<List<PlayableCharacter>>(emptyList())
         private set
 
-    var nickname by mutableStateOf("")
-        private set
+    private val _nickname = MutableStateFlow("")
+    val nickname: StateFlow<String> = _nickname.asStateFlow()
 
-    var isLoading by mutableStateOf(true)
-        private set
+    private val _currentCharacterId = MutableStateFlow("")
+    val currentCharacterId: StateFlow<String> = _currentCharacterId.asStateFlow()
 
-    val uid: String
-        get() = auth.currentUser?.uid ?: ""
+    private val _uid = MutableStateFlow<String?>(null)
+    val uid: StateFlow<String?> = _uid
 
     init {
-        fetchUserData()
+        fetchCurrentUserUid()
+
+        viewModelScope.launch {
+            uid.collectLatest { currentUid ->
+                if (!currentUid.isNullOrEmpty()) {
+                    loadUserData(currentUid)
+                    updateFcmToken(currentUid)
+                }
+            }
+        }
     }
 
-    private fun fetchUserData() {
-        val uid = auth.currentUser?.uid ?: return
+    fun fetchCurrentUserUid() {
+        _uid.value = auth.currentUser?.uid
+    }
 
+    private fun loadUserData(uid: String) {
         db.collection("users").document(uid)
             .get()
-            .addOnSuccessListener { document ->
-                if (document.exists()) {
-                    username = document.getString("username") ?: ""
-                    nickname = document.getString("nickname") ?: ""
-                }
-                isLoading = false
+            .addOnSuccessListener { userDoc ->
+                val nick = userDoc.getString("nickname") ?: ""
+                _nickname.value = nick
+
+                val characterIdFromUser = userDoc.getString("currentCharacterId") ?: ""
+                println("Loaded currentCharacterId from user document: $characterIdFromUser")
+
+                db.collection("characters")
+                    .whereEqualTo("userId", uid)
+                    .get()
+                    .addOnSuccessListener { snapshot ->
+                        val chars = snapshot.documents.mapNotNull { it.toObject(PlayableCharacter::class.java) }
+                        characters.value = chars
+                        println("Loaded characters count: ${chars.size}")
+
+                        _currentCharacterId.value = characterIdFromUser.ifEmpty {
+                            chars.firstOrNull()?.characterId ?: ""
+                        }
+                        println("Current character id set to: ${_currentCharacterId.value}")
+                    }
             }
-            .addOnFailureListener {
-                isLoading = false
-                Log.e("UserViewModel", "Failed to fetch user data", it)
-            }
+    }
+
+    private fun updateFcmToken(uid: String) {
+        FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+            db.collection("users").document(uid).update("fcmToken", token)
+        }
     }
 }

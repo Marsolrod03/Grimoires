@@ -31,9 +31,9 @@ fun StatsScreen(
     statsViewModel: StatsViewModel,
     characterId: String
 ) {
-    LaunchedEffect(characterId) {
-        statsViewModel.loadAttributes(characterId)
-    }
+    var isInitialized by remember { mutableStateOf(false) }
+
+    val attributes = statsViewModel.attributes
 
     var strength by remember { mutableStateOf("10") }
     var dexterity by remember { mutableStateOf("10") }
@@ -41,6 +41,22 @@ fun StatsScreen(
     var intelligence by remember { mutableStateOf("10") }
     var wisdom by remember { mutableStateOf("10") }
     var charisma by remember { mutableStateOf("10") }
+
+    LaunchedEffect(characterId) {
+        statsViewModel.loadAttributes(characterId)
+    }
+
+    LaunchedEffect(attributes) {
+        if (!isInitialized) {
+            strength = attributes.strength.toString()
+            dexterity = attributes.dexterity.toString()
+            constitution = attributes.constitution.toString()
+            intelligence = attributes.intelligence.toString()
+            wisdom = attributes.wisdom.toString()
+            charisma = attributes.charisma.toString()
+            isInitialized = true
+        }
+    }
 
     fun calculateBonus(value: String): Int {
         val intValue = value.toIntOrNull() ?: 10
@@ -66,7 +82,7 @@ fun StatsScreen(
         bottomBar = {
             Button(
                 onClick = {
-                    val attributes = Attributes(
+                    val newAttributes = Attributes(
                         strength = strength.toIntOrNull() ?: 10,
                         dexterity = dexterity.toIntOrNull() ?: 10,
                         constitution = constitution.toIntOrNull() ?: 10,
@@ -74,7 +90,7 @@ fun StatsScreen(
                         wisdom = wisdom.toIntOrNull() ?: 10,
                         charisma = charisma.toIntOrNull() ?: 10
                     )
-                    statsViewModel.updateAttributes(attributes)
+                    statsViewModel.updateAttributes(characterId, newAttributes)
                     navController.popBackStack()
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5C9E87)),
@@ -94,67 +110,12 @@ fun StatsScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-
-            AttributeRow(
-                label = "STRENGTH",
-                value = strength,
-                onValueChange = {
-                    val num = it.toIntOrNull()
-                    if (it.isEmpty() || (num != null && num in 1..20)) strength = it
-                },
-                bonus = formatBonus(calculateBonus(strength))
-            )
-
-            AttributeRow(
-                label = "DEXTERITY",
-                value = dexterity,
-                onValueChange = {
-                    val num = it.toIntOrNull()
-                    if (it.isEmpty() || (num != null && num in 1..20)) dexterity = it
-                },
-                bonus = formatBonus(calculateBonus(dexterity))
-            )
-
-            AttributeRow(
-                label = "CONSTITUTION",
-                value = constitution,
-                onValueChange = {
-                    val num = it.toIntOrNull()
-                    if (it.isEmpty() || (num != null && num in 1..20)) constitution = it
-                },
-                bonus = formatBonus(calculateBonus(constitution))
-            )
-
-            AttributeRow(
-                label = "INTELLIGENCE",
-                value = intelligence,
-                onValueChange = {
-                    val num = it.toIntOrNull()
-                    if (it.isEmpty() || (num != null && num in 1..20)) intelligence = it
-                },
-                bonus = formatBonus(calculateBonus(intelligence))
-            )
-
-            AttributeRow(
-                label = "WISDOM",
-                value = wisdom,
-                onValueChange = {
-                    val num = it.toIntOrNull()
-                    if (it.isEmpty() || (num != null && num in 1..20)) wisdom = it
-                },
-                bonus = formatBonus(calculateBonus(wisdom))
-            )
-
-            AttributeRow(
-                label = "CHARISMA",
-                value = charisma,
-                onValueChange = {
-                    val num = it.toIntOrNull()
-                    if (it.isEmpty() || (num != null && num in 1..20)) charisma = it
-                },
-                bonus = formatBonus(calculateBonus(charisma))
-            )
-
+            AttributeRow("STRENGTH", strength, { strength = it }, formatBonus(calculateBonus(strength)))
+            AttributeRow("DEXTERITY", dexterity, { dexterity = it }, formatBonus(calculateBonus(dexterity)))
+            AttributeRow("CONSTITUTION", constitution, { constitution = it }, formatBonus(calculateBonus(constitution)))
+            AttributeRow("INTELLIGENCE", intelligence, { intelligence = it }, formatBonus(calculateBonus(intelligence)))
+            AttributeRow("WISDOM", wisdom, { wisdom = it }, formatBonus(calculateBonus(wisdom)))
+            AttributeRow("CHARISMA", charisma, { charisma = it }, formatBonus(calculateBonus(charisma)))
         }
     }
 }

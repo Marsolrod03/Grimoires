@@ -16,7 +16,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily.Companion.Serif
 import androidx.compose.ui.unit.dp
+import com.grimoires.Grimoires.ui.theme.deepBrown
+import com.grimoires.Grimoires.ui.theme.parchment
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -24,14 +27,14 @@ fun DetailScaffold(title: String, onBack: () -> Unit, content: @Composable () ->
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(title, color = Color.White) },
+                title = { Text(title, color = Color.White, fontFamily = Serif) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFB44B33)
+                    containerColor = deepBrown
                 )
             )
         },
@@ -39,7 +42,7 @@ fun DetailScaffold(title: String, onBack: () -> Unit, content: @Composable () ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFFF7EDDF))
+                    .background(parchment)
                     .padding(innerPadding)
                     .padding(16.dp)
             ) {

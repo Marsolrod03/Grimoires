@@ -2,12 +2,12 @@ package com.grimoires.Grimoires.ui.models
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.google.firebase.Firebase
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.firestore
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.grimoires.Grimoires.domain.model.CharacterClass
 import com.grimoires.Grimoires.domain.model.Item
-import com.grimoires.Grimoires.domain.model.LibraryItem
 import com.grimoires.Grimoires.domain.model.Race
 import com.grimoires.Grimoires.domain.model.Spell
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,12 +25,10 @@ class CatalogViewModel : ViewModel() {
     val races: StateFlow<List<Race>> = _races.asStateFlow()
 
     private val _items = MutableStateFlow<List<Item>>(emptyList())
-    val items: StateFlow<List<Item>> = _items
-
+    val items: StateFlow<List<Item>> = _items.asStateFlow()
 
     private val _spells = MutableStateFlow<List<Spell>>(emptyList())
     val spells: StateFlow<List<Spell>> = _spells.asStateFlow()
-
 
     init {
         fetchCharacterClasses()
@@ -43,8 +41,13 @@ class CatalogViewModel : ViewModel() {
         firestore.collection("charClass")
             .get()
             .addOnSuccessListener { result ->
-                val list = result.mapNotNull { it.toObject(CharacterClass::class.java) }
+                val list = result.documents.mapNotNull { doc ->
+                    doc.toObject(CharacterClass::class.java)?.copy(classId = doc.id)
+                }
                 _classes.value = list
+            }
+            .addOnFailureListener { e ->
+                Log.e("CatalogViewModel", "Failed to fetch character classes", e)
             }
     }
 
@@ -52,29 +55,32 @@ class CatalogViewModel : ViewModel() {
         firestore.collection("classes")
             .get()
             .addOnSuccessListener { result ->
-                val list = result.mapNotNull { it.toObject(Race::class.java) }
+                val list = result.documents.mapNotNull { doc ->
+                    doc.toObject(Race::class.java)?.copy(raceId = doc.id)
+                }
                 _races.value = list
+            }
+            .addOnFailureListener { e ->
+                Log.e("CatalogViewModel", "Failed to fetch races", e)
             }
     }
 
-    private fun fetchItems() {
+
+
+    fun fetchItems() {
         firestore.collection("items")
             .get()
             .addOnSuccessListener { result ->
-                val list = result.documents.map { doc ->
+                _items.value = result.documents.mapNotNull { doc ->
                     doc.toObject(Item::class.java)?.copy(itemId = doc.id)
-                }.filterNotNull()
-                _items.value = list
-                Log.d("CatalogViewModel", "Fetched ${list.size} items")
+                }
             }
-            .addOnFailureListener {
-                Log.e("CatalogViewModel", "Failed to fetch items", it)
+            .addOnFailureListener { e ->
+                Log.e("CatalogViewModel", "Failed to fetch items", e)
             }
     }
 
-
     fun fetchSpells() {
-        val firestore = FirebaseFirestore.getInstance()
         firestore.collection("spells")
             .get()
             .addOnSuccessListener { result ->
@@ -87,8 +93,8 @@ class CatalogViewModel : ViewModel() {
                 }
                 _spells.value = spellsList
             }
-            .addOnFailureListener {
+            .addOnFailureListener { e ->
+                Log.e("CatalogViewModel", "Failed to fetch spells", e)
             }
     }
-
 }

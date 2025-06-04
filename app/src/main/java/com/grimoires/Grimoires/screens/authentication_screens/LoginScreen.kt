@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily.Companion.Serif
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -65,7 +66,7 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel) {
             .background(backgroundColor),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Header
+
         Text(
             text = "< Back",
             modifier = Modifier
@@ -78,11 +79,12 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Título
+
         Text(
             text = "Destiny brings you\nback...",
             textAlign = TextAlign.Center,
             fontWeight = FontWeight.Bold,
+            fontFamily = Serif,
             color = primaryColor,
             fontSize = 26.sp
         )
@@ -124,7 +126,7 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Campo Contraseña
+
             Text(
                 text = "Password",
                 color = Color.White,

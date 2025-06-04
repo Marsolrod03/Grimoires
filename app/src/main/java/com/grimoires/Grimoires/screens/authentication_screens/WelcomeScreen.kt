@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily.Companion.Serif
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -58,6 +59,7 @@ fun WelcomeScreen(navController: NavHostController) {
                 text = "Grimoires",
                 color = Color.White,
                 fontSize = 36.sp,
+                fontFamily = Serif,
                 fontWeight = FontWeight.Bold
             )
 
