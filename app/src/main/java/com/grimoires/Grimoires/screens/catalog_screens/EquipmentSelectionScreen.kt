@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -25,16 +26,21 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -60,7 +66,6 @@ import com.grimoires.Grimoires.ui.theme.leafGreen
 import com.grimoires.Grimoires.ui.theme.lightTan
 import com.grimoires.Grimoires.ui.theme.oak
 import com.grimoires.Grimoires.ui.theme.parchment
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EquipmentSelectionScreen(
@@ -70,7 +75,7 @@ fun EquipmentSelectionScreen(
     characterViewModel: PlayableCharacterViewModel = viewModel()
 ) {
     val allItems by viewModel.items.collectAsState()
-    val selectedItems = remember { mutableStateListOf<Item>() }
+    val selectedItems = remember { mutableStateListOf<String>() }
     var selectedType by remember { mutableStateOf("All") }
 
     val itemTypes = remember(allItems) {
@@ -81,172 +86,101 @@ fun EquipmentSelectionScreen(
         if (selectedType == "All") allItems else allItems.filter { it.type == selectedType }
     }
 
+    LaunchedEffect(characterId) {
+        characterViewModel.loadItemsByIds(characterId) { equippedItems ->
+            selectedItems.clear()
+            selectedItems.addAll(equippedItems.map { it.itemId })
+        }
+        if (allItems.isEmpty()) {
+            viewModel.fetchItems()
+        }
+    }
 
     Scaffold(
         containerColor = parchment,
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        "Equipment",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Serif,
-                            letterSpacing = 2.sp,
-                            color = Color.White
-                        )
-                    )
-                },
+                title = { Text("Equipment", fontSize = 28.sp, fontFamily = FontFamily.Serif, color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            Icons.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
-                        )
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = deepBrown)
             )
         },
         bottomBar = {
-            Box(
+            Button(
+                onClick = {
+                    characterViewModel.saveSelectedItems(characterId, selectedItems)
+                    navController.popBackStack()
+                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFFE8D5B7))
                     .padding(16.dp),
-                contentAlignment = Alignment.Center
+                enabled = selectedItems.isNotEmpty(),
+                colors = ButtonDefaults.buttonColors(containerColor = leafGreen)
             ) {
-                Button(
-                    onClick = {
-                        val itemIds = selectedItems.map { it.itemId }
-                        characterViewModel.saveSelectedItems(characterId, itemIds)
-                        navController.popBackStack()
-                    },
-                    shape = RoundedCornerShape(30.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = leafGreen)
-                ) {
-                    Text("SAVE EQUIPMENT", color = Color.White, letterSpacing = 2.sp)
-                }
+                Text("SAVE EQUIPMENT", color = Color.White)
             }
         }
     ) { innerPadding ->
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .background(lightTan)
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp)
+                .padding(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "ITEM TYPE:",
-                    fontWeight = FontWeight.Bold,
-                    color = oak,
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-                EquipmentFilterDropdown(
-                    itemTypes = itemTypes,
-                    selectedType = selectedType,
-                    onTypeSelected = { selectedType = it }
-                )
-            }
+                Text("ITEM TYPE:", fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.width(8.dp))
 
-            Spacer(modifier = Modifier.height(16.dp))
+                var expanded by remember { mutableStateOf(false) }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .background(parchment, RoundedCornerShape(16.dp))
-                    .border(4.dp, deepBrown, RoundedCornerShape(16.dp))
-                    .padding(12.dp)
-            ) {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(filteredItems) { item ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        ) {
-                            Checkbox(
-                                checked = selectedItems.contains(item),
-                                onCheckedChange = { checked ->
-                                    if (checked) selectedItems.add(item)
-                                    else selectedItems.remove(item)
+                ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
+                    OutlinedTextField(
+                        value = selectedType,
+                        onValueChange = {},
+                        readOnly = true,
+                        modifier = Modifier.menuAnchor().width(180.dp),
+                        label = { Text("Type") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
+                    )
+                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        itemTypes.forEach { type ->
+                            DropdownMenuItem(
+                                text = { Text(type) },
+                                onClick = {
+                                    selectedType = type
+                                    expanded = false
                                 }
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = item.name,
-                                style = MaterialTheme.typography.bodyLarge
                             )
                         }
                     }
                 }
             }
-        }
-    }
-}
-@Composable
-fun EquipmentFilterDropdown(
-    itemTypes: List<String>,
-    selectedType: String,
-    onTypeSelected: (String) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
 
-    Box {
-        OutlinedButton(
-            onClick = { expanded = true },
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = oak)
-        ) {
-            Text(selectedType)
-        }
+            Spacer(modifier = Modifier.height(16.dp))
 
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier
-                .background(Color.Transparent)
-                .padding(horizontal = 8.dp)
-        ) {
-            itemTypes.forEach { type ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                        .clickable {
-                            onTypeSelected(type)
-                            expanded = false
-                        },
-                    shape = RoundedCornerShape(8.dp),
-                    colors = CardDefaults.cardColors(containerColor = parchment),
-                    border = BorderStroke(2.dp, deepBrown)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RetroCheckbox(
-                            checked = type == selectedType,
-                            onCheckedChange = {
-                                onTypeSelected(type)
-                                expanded = false
+            if (filteredItems.isEmpty()) {
+                Text("No items available.")
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(
+                        items = filteredItems,
+                        key = { it.itemId }
+                    ) { item ->
+                        EquipmentItemCard(
+                            item = item,
+                            isSelected = selectedItems.contains(item.itemId),
+                            onSelectionChange = { selected ->
+                                if (selected) {
+                                    if (!selectedItems.contains(item.itemId)) {
+                                        selectedItems.add(item.itemId)
+                                    }
+                                } else {
+                                    selectedItems.remove(item.itemId)
+                                }
                             }
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text(
-                            text = type,
-                            fontFamily = FontFamily.Serif,
-                            fontWeight = if (type == selectedType) FontWeight.Bold else FontWeight.Normal,
-                            color = deepBrown
                         )
                     }
                 }
@@ -255,4 +189,38 @@ fun EquipmentFilterDropdown(
     }
 }
 
-
+@Composable
+fun EquipmentItemCard(
+    item: Item,
+    isSelected: Boolean,
+    onSelectionChange: (Boolean) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onSelectionChange(!isSelected) },
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = parchment),
+        border = BorderStroke(2.dp, if (isSelected) leafGreen else deepBrown)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = isSelected,
+                onCheckedChange = null,
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column {
+                Text(item.name, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif)
+                item.description?.let {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(it, maxLines = 2, fontFamily = FontFamily.Serif)
+                }
+            }
+        }
+    }
+}

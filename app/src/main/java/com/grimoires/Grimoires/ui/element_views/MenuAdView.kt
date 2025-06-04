@@ -1,6 +1,7 @@
 package com.grimoires.Grimoires.ui.element_views
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,19 +17,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily.Companion.Serif
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.grimoires.Grimoires.data.classes.MenuAd
+import com.grimoires.Grimoires.domain.model.MenuAd
+import com.grimoires.Grimoires.ui.theme.deepBrown
 
 @Composable
-fun MenuAdView(ad: MenuAd) {
+fun MenuAdView(ad: MenuAd, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .padding(16.dp)
+            .clickable { onClick() }
             .fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFB44B33)
+            containerColor = deepBrown
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
 
@@ -46,14 +50,18 @@ fun MenuAdView(ad: MenuAd) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     text = ad.title.uppercase(),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = Serif
+                    ),
                     color = Color.White
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = ad.description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.White
+                    color = Color.White,
+                    fontFamily = Serif
                 )
             }
         }

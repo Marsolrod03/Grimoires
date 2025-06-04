@@ -4,12 +4,28 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.google.firebase.Firebase
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.firestore
 import com.grimoires.Grimoires.domain.model.Attributes
+import com.grimoires.Grimoires.domain.model.Item
+import com.grimoires.Grimoires.domain.model.Spell
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+
 class StatsViewModel : ViewModel() {
+
+    private val firestore = Firebase.firestore
+
     var attributes by mutableStateOf(Attributes())
         private set
+
+    private val _characterItems = MutableStateFlow<List<Item>>(emptyList())
+    val characterItems: StateFlow<List<Item>> = _characterItems
+
+    private val _characterSpells = MutableStateFlow<List<Spell>>(emptyList())
+    val characterSpells: StateFlow<List<Spell>> = _characterSpells
 
     fun loadAttributes(characterId: String) {
         FirebaseFirestore.getInstance().collection("characters").document(characterId)
@@ -57,6 +73,37 @@ class StatsViewModel : ViewModel() {
             }
             .addOnFailureListener { e ->
                 println("Error updating attributes: $e")
+            }
+    }
+    fun loadItemsForCharacter(characterId: String) {
+        firestore.collection("characters").document(characterId).get()
+            .addOnSuccessListener { document ->
+                val itemRefs = document["inventory"] as? List<com.google.firebase.firestore.DocumentReference> ?: return@addOnSuccessListener
+
+                itemRefs.forEach { ref ->
+                    ref.get().addOnSuccessListener { itemDoc ->
+                        val item = itemDoc.toObject(Item::class.java)
+                        if (item != null) {
+                            _characterItems.value = _characterItems.value + item
+                        }
+                    }
+                }
+            }
+    }
+
+    fun loadSpellsForCharacter(characterId: String) {
+        firestore.collection("characters").document(characterId).get()
+            .addOnSuccessListener { document ->
+                val spellRefs = document["spells"] as? List<com.google.firebase.firestore.DocumentReference> ?: return@addOnSuccessListener
+
+                spellRefs.forEach { ref ->
+                    ref.get().addOnSuccessListener { spellDoc ->
+                        val spell = spellDoc.toObject(Spell::class.java)
+                        if (spell != null) {
+                            _characterSpells.value = _characterSpells.value + spell
+                        }
+                    }
+                }
             }
     }
 }

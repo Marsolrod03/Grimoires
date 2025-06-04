@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily.Companion.Serif
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -91,6 +92,7 @@ fun SignUpScreen(navController: NavHostController) {
 
         Text(
             text = "The quest beckons...",
+            fontFamily = Serif,
             textAlign = TextAlign.Center,
             fontWeight = FontWeight.Bold,
             color = accentColor,

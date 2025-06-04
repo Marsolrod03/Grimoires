@@ -42,6 +42,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.google.firebase.firestore.FirebaseFirestore
 import com.grimoires.Grimoires.domain.model.Spell
+import com.grimoires.Grimoires.ui.models.CatalogViewModel
 import com.grimoires.Grimoires.ui.models.PlayableCharacterViewModel
 import com.grimoires.Grimoires.ui.theme.deepBrown
 import com.grimoires.Grimoires.ui.theme.parchment
@@ -49,10 +50,10 @@ import com.grimoires.Grimoires.ui.theme.parchment
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SpellsScreen(
-characterId: String,
-viewModel: PlayableCharacterViewModel,
-navController: NavController,
-onBackClick: () -> Unit
+    characterId: String,
+    viewModel: PlayableCharacterViewModel,
+    navController: NavController,
+    onBackClick: () -> Unit
 ) {
     LaunchedEffect(characterId) {
         viewModel.loadCharacterById(characterId)
@@ -61,25 +62,10 @@ onBackClick: () -> Unit
     val character by viewModel.currentCharacter.collectAsState()
     var spells by remember { mutableStateOf<List<Spell>>(emptyList()) }
 
-    val spellRefs = character?.spells ?: emptyList()
 
-    LaunchedEffect(spellRefs) {
-        if (spellRefs.isNotEmpty()) {
-            viewModel.loadSpellsByIds(characterId) { loadedSpellIds ->
-                val db = FirebaseFirestore.getInstance()
-                db.collection("spells")
-                    .whereIn(com.google.firebase.firestore.FieldPath.documentId(), loadedSpellIds)
-                    .get()
-                    .addOnSuccessListener { snapshot ->
-                        spells = snapshot.documents.mapNotNull { it.toObject(Spell::class.java) }
-                    }
-                    .addOnFailureListener {
-                        Log.e("SpellsScreen", "Error loading spells", it)
-                        spells = emptyList()
-                    }
-            }
-        } else {
-            spells = emptyList()
+    LaunchedEffect(characterId) {
+        viewModel.loadSpellsByIds(characterId) { loadedSpells ->
+            spells = loadedSpells
         }
     }
 

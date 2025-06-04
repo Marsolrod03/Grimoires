@@ -3,14 +3,42 @@ package com.grimoires.Grimoires.screens.campaign_screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,12 +51,14 @@ import com.google.firebase.auth.FirebaseAuth
 import com.grimoires.Grimoires.domain.model.Campaign
 import com.grimoires.Grimoires.domain.model.NonPlayableCharacter
 import com.grimoires.Grimoires.domain.model.Participant
-import com.grimoires.Grimoires.domain.model.User
+import com.grimoires.Grimoires.screens.npc_screens.InfoItem
 import com.grimoires.Grimoires.ui.element_views.CampaignCharacterCard
-import com.grimoires.Grimoires.ui.element_views.CharacterCard
+import com.grimoires.Grimoires.ui.models.NotesViewModel
+import com.grimoires.Grimoires.ui.models.PublicNotesSection
 import com.grimoires.Grimoires.ui.models.UserViewModel
 import com.grimoires.Grimoires.ui.theme.deepBrown
 import com.grimoires.Grimoires.ui.theme.lightTan
+import com.grimoires.Grimoires.ui.theme.oak
 import com.grimoires.Grimoires.viewmodel.CampaignViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,30 +66,35 @@ import com.grimoires.Grimoires.viewmodel.CampaignViewModel
 fun CampaignDetailScreen(
     navController: NavController,
     campaignId: String,
+    notesViewModel: NotesViewModel,
     campaignViewModel: CampaignViewModel,
     userViewModel: UserViewModel
 ) {
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-
     val campaign by campaignViewModel.getCampaign(campaignId).collectAsState(initial = null)
-    val isMaster = campaign?.masterID == currentUserId
     val participants by campaignViewModel.participants.collectAsState()
     val npcs by campaignViewModel.npcs.collectAsState()
+
+
     var selectedTab by remember { mutableIntStateOf(0) }
+
+    val isMaster = remember(campaign) {
+        campaign?.masterID == currentUserId
+    }
+
 
     LaunchedEffect(campaignId) {
         campaignViewModel.loadCampaignParticipants(campaignId)
         campaignViewModel.loadCampaignNpcs(campaignId)
+        notesViewModel.loadNotes(campaignId)
     }
-
-
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        campaign?.title ?: "Loading...",
+                        campaign?.title ?: "",
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.Serif
                     )
@@ -88,74 +123,83 @@ fun CampaignDetailScreen(
                 .background(lightTan)
         ) {
             if (isMaster) {
-                TabRow(selectedTabIndex = selectedTab) {
-                    Tab(
-                        selected = selectedTab == 0,
-                        onClick = { selectedTab = 0 },
-                        text = {
-                            Text(
-                                "PUBLIC",
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Serif
-                            )
-                        }
-                    )
-                    Tab(
-                        selected = selectedTab == 1,
-                        onClick = { selectedTab = 1 },
-                        text = {
-                            Text(
-                                "PRIVATE",
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Serif
-                            )
-                        }
-                    )
-                    Tab(
-                        selected = selectedTab == 2,
-                        onClick = { selectedTab = 2 },
-                        text = {
-                            Text(
-                                "CHARACTERS",
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Serif
-                            )
-                        }
-                    )
+                val tabTitles = listOf("PUBLIC", "PRIVATE", "CHARACTERS")
+                TabRow(
+                    selectedTabIndex = selectedTab,
+                    indicator = { tabPositions ->
+                        TabRowDefaults.Indicator(
+                            Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                            color = deepBrown
+                        )
+                    }
+                ) {
+                    tabTitles.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            text = {
+                                Text(
+                                    title,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Serif,
+                                    color = if (selectedTab == index) Color.White else lightTan
+                                )
+                            },
+                            modifier = Modifier.background(if (selectedTab == index) oak else deepBrown)
+                        )
+                    }
                 }
             }
 
             when (selectedTab) {
-                0 -> PublicInfoTab(campaign)
-                1 -> PrivateMasterTab(campaign, participants, npcs, navController, campaignId)
-                2 -> CharactersTab(participants, navController, campaignId)
+                0 -> PublicInfoTab(campaign, notesViewModel, isMaster, currentUserId, campaignId)
+                1 -> {
+                    if (isMaster) {
+                        PrivateMasterTab(campaign, participants, npcs, navController, campaignId)
+                    } else {
+                        PublicInfoTab(campaign, notesViewModel, isMaster, currentUserId, campaignId)
+                    }
+                }
+                2 -> {
+                    if (isMaster) {
+                        CharactersTab(participants, navController)
+                    } else {
+                        PublicInfoTab(campaign, notesViewModel, isMaster, currentUserId, campaignId)
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = { navController.navigate("notes/$campaignId") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Text("NOTES")
-            }
         }
     }
 }
 
+
 @Composable
-fun PublicInfoTab(campaign: Campaign?) {
+fun PublicInfoTab(
+    campaign: Campaign?,
+    notesViewModel: NotesViewModel,
+    isMaster: Boolean,
+    userId: String,
+    campaignId: String
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
         SectionTitle("CAMPAIGN INFORMATION")
-        InfoItem("Name", campaign?.title ?: "")
-        InfoItem("Genre", campaign?.genre ?: "")
+        InfoItem("Title", campaign?.title ?: "")
         InfoItem("Description", campaign?.description ?: "")
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        PublicNotesSection(
+            campaignId = campaignId,
+            userId = userId,
+            isMaster = isMaster,
+            notesViewModel = notesViewModel
+        )
     }
 }
 
@@ -208,7 +252,8 @@ fun PrivateMasterTab(
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = { navController.navigate("npcs/$campaignId") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = deepBrown)
         ) {
             Text("MANAGE NPCs")
         }
@@ -218,9 +263,11 @@ fun PrivateMasterTab(
 @Composable
 fun CharactersTab(
     participants: List<Participant>,
-    navController: NavController,
-    campaignId: String
+    navController: NavController
 ) {
+
+    val players = participants.filter { !it.isMaster }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -229,17 +276,15 @@ fun CharactersTab(
     ) {
         SectionTitle("CHARACTERS")
 
-        if (participants.isEmpty()) {
+        if (players.isEmpty()) {
             Text("No characters yet", modifier = Modifier.padding(16.dp))
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                participants.forEach { participant ->
+                players.forEach { participant ->
                     CampaignCharacterCard(
-                        characterName = participant.characterName,
-                        playerName = participant.nickname,
+                        participant = participant,
                         onClick = {
                             navController.navigate("characterSheet/${participant.characterID}")
-
                         }
                     )
                 }
@@ -266,21 +311,24 @@ fun SectionTitle(title: String) {
     Spacer(modifier = Modifier.height(8.dp))
 }
 
-@Composable
-fun InfoItem(label: String, value: String) {
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
-        Text(text = label, fontWeight = FontWeight.Medium, fontFamily = FontFamily.Serif)
-        Text(text = value, fontFamily = FontFamily.Serif)
-    }
-}
 
 @Composable
 fun ParticipantItem(participant: Participant) {
     Row(modifier = Modifier.padding(vertical = 4.dp)) {
-        Text(
-            text = "• ${participant.nickname} (${participant.characterName})",
-            fontFamily = FontFamily.Serif
-        )
+        if (participant.isMaster) {
+            Text(
+                text = "• ${participant.nickname} (Master)",
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.Bold,
+                color = deepBrown
+            )
+        } else {
+            Text(
+                text = "• ${participant.nickname} (${participant.characterName})",
+                fontFamily = FontFamily.Serif,
+                color = if (participant.characterName == "Sin personaje") Color.Red else Color.Unspecified
+            )
+        }
     }
 }
 

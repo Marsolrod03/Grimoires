@@ -33,9 +33,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.grimoires.Grimoires.domain.model.PlayableCharacter
 import androidx.compose.material3.Divider
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontFamily.Companion.Serif
 import androidx.navigation.NavController
@@ -46,6 +49,8 @@ import com.grimoires.Grimoires.ui.models.StatsViewModel
 import com.grimoires.Grimoires.ui.theme.deepBrown
 import com.grimoires.Grimoires.ui.theme.oak
 import com.grimoires.Grimoires.ui.theme.parchment
+import com.grimoires.Grimoires.domain.model.Item
+import com.grimoires.Grimoires.domain.model.Spell
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,9 +64,14 @@ fun CharacterSheetScreen(
 ) {
 
     val attributes = statsViewModel.attributes
+    val items by remember { mutableStateOf<List<Item>>(emptyList()) }
+    val spells by remember { mutableStateOf<List<Spell>>(emptyList()) }
 
     LaunchedEffect(character.characterId) {
         statsViewModel.loadAttributes(character.characterId)
+        statsViewModel.loadItemsForCharacter(character.characterId)
+        statsViewModel.loadSpellsForCharacter(character.characterId)
+
     }
     val classList by catalogViewModel.classes.collectAsState()
     val characterClass = classList.find { it.name.trim().equals(character.characterClass.trim(), ignoreCase = true) }
@@ -70,7 +80,7 @@ fun CharacterSheetScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(character.characterName, fontSize = 24.sp, fontWeight = FontWeight.Bold, fontFamily = Serif) },
+                title = { Text(character.characterName, fontSize = 24.sp, fontFamily = Serif) },
                 actions = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
@@ -79,7 +89,7 @@ fun CharacterSheetScreen(
                             tint = Color.White
                         )
                     }
-                    IconButton(onClick = onEditClick) {
+                    IconButton(onClick = {navController.navigate("edit_character/${character.characterId}")}) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit Character", tint = Color.White)
                     }
                 },
@@ -96,6 +106,7 @@ fun CharacterSheetScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(16.dp)
+
         ) {
             LabeledText("NAME", character.characterName)
             LabeledText("RACE", character.race)
@@ -104,8 +115,10 @@ fun CharacterSheetScreen(
             LabeledText("ALIGNMENT", character.alignment)
 
             Spacer(modifier = Modifier.height(16.dp))
-            Text("ATTRIBUTES:", style = MaterialTheme.typography.titleMedium, color = deepBrown)
-
+            Text("ATTRIBUTES:", style = MaterialTheme.typography.titleMedium, color = deepBrown, fontFamily = Serif, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(6.dp))
+            Divider(modifier = Modifier.fillMaxWidth(), thickness = 1.dp, color = oak)
+            Spacer(modifier = Modifier.height(6.dp))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -121,29 +134,64 @@ fun CharacterSheetScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
             Text("STATS:", style = MaterialTheme.typography.titleMedium, color = deepBrown,fontWeight = FontWeight.Bold, fontFamily = Serif)
-
+            Spacer(modifier = Modifier.height(6.dp))
+            Divider(modifier = Modifier.fillMaxWidth(), thickness = 1.dp, color = oak)
+            Spacer(modifier = Modifier.height(6.dp))
             StatsGrid(attributes = attributes)
 
             Spacer(modifier = Modifier.height(32.dp))
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Button(
-                    onClick = {  navController.navigate("inventoryScreen/${character.characterId}") },
-                    shape = RoundedCornerShape(50),
-                    colors = ButtonDefaults.buttonColors(containerColor = deepBrown)
-                ) {
-                    Text("EQUIPMENT", color = Color.White,fontWeight = FontWeight.Bold, fontFamily = Serif)
+                Text("EQUIPMENT", fontWeight = FontWeight.Bold, fontSize = 16.sp, fontFamily = Serif, color = deepBrown)
+                TextButton(onClick = {
+                    navController.navigate("equipment_select/${character!!.characterId}")
+                }) {
+                    Text("My Equipment", color = deepBrown, fontFamily = Serif)
                 }
+                Spacer(modifier = Modifier.height(6.dp))
+                Divider(modifier = Modifier.fillMaxWidth(), thickness = 1.dp, color = oak)
+                Spacer(modifier = Modifier.height(6.dp))
+            }
 
-                Button(
-                    onClick = {  navController.navigate("spellsScreen/${character.characterId}") },
-                    shape = RoundedCornerShape(50),
-                    colors = ButtonDefaults.buttonColors(containerColor = deepBrown)
-                ) {
-                    Text("SPELLS", color = Color.White,fontWeight = FontWeight.Bold, fontFamily = Serif)
+            if (items.isEmpty()) {
+
+            } else {
+                items.take(3).forEach { item ->
+                    Text("• ${item.name}", fontFamily = Serif)
+                }
+                if (items.size > 3) {
+                    Text("...and ${items.size - 3} more", fontFamily = Serif)
+                }
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("SPELLS", fontWeight = FontWeight.Bold, fontSize = 16.sp, fontFamily = Serif,color = deepBrown)
+                TextButton(onClick = {
+                    navController.navigate("spells_select/${character!!.characterId}/${character!!.characterClass}")
+                }) {
+                    Text("My Spells", color = deepBrown, fontFamily = Serif)
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+                Divider(modifier = Modifier.fillMaxWidth(), thickness = 1.dp, color = oak)
+                Spacer(modifier = Modifier.height(6.dp))
+            }
+
+            if (spells.isEmpty()) {
+
+            } else {
+                spells.take(3).forEach { spell ->
+                    Text("• ${spell.name} (Lv ${spell.level})", fontFamily = Serif)
+                }
+                if (spells.size > 3) {
+                    Text("...and ${spells.size - 3} more", fontFamily = Serif)
                 }
             }
         }
@@ -153,7 +201,7 @@ fun CharacterSheetScreen(
 @Composable
 fun LabeledText(label: String, value: String) {
     Column(modifier = Modifier.padding(vertical = 4.dp)) {
-        Text("$label:", color = deepBrown, fontWeight = FontWeight.Bold, fontFamily = Serif)
+        Text("$label:", color = deepBrown, fontWeight = FontWeight.Bold, fontFamily = Serif,fontSize = 16.sp)
         Spacer(modifier = Modifier.height(4.dp))
         Divider(modifier = Modifier.fillMaxWidth(), thickness = 1.dp, color = oak)
         Spacer(modifier = Modifier.height(4.dp))

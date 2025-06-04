@@ -32,7 +32,6 @@ import com.grimoires.Grimoires.ui.theme.leafGreen
 import com.grimoires.Grimoires.ui.theme.parchment
 import com.grimoires.Grimoires.ui.theme.textDark
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SpellsSelectionScreen(
@@ -50,15 +49,21 @@ fun SpellsSelectionScreen(
         listOf("All") + allSpells.map { it.level.toString() }.distinct().sorted()
     }
 
-    val filteredSpells = remember(allSpells, characterClass, selectedLevel) {
+    val filteredSpells = remember(allSpells, selectedLevel, characterClass) {
         allSpells.filter { spell ->
-            val levelFilter = selectedLevel == "All" || spell.level.toString() == selectedLevel
-            val classFilter = characterClass.isEmpty() || spell.charClass.any { it.equals(characterClass, ignoreCase = true) }
-            levelFilter && classFilter
+            val matchesLevel = selectedLevel == "All" || spell.level.toString() == selectedLevel
+            val matchesClass = spell.charClass.any { it.equals(characterClass, ignoreCase = true) }
+            matchesLevel && matchesClass
         }
     }
 
-    LaunchedEffect(Unit) {
+
+    LaunchedEffect(characterId) {
+        characterViewModel.loadSpellsByIds(characterId) { equippedSpells ->
+            selectedSpells.clear()
+            selectedSpells.addAll(equippedSpells)
+        }
+
         if (allSpells.isEmpty()) {
             viewModel.fetchSpells()
         }
@@ -68,21 +73,10 @@ fun SpellsSelectionScreen(
         containerColor = parchment,
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        "Spells",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Serif,
-                            letterSpacing = 2.sp,
-                            color = Color.White
-                        )
-                    )
-                },
+                title = { Text("Spells", fontSize = 28.sp, fontFamily = FontFamily.Serif, color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = deepBrown)
@@ -91,22 +85,17 @@ fun SpellsSelectionScreen(
         bottomBar = {
             Button(
                 onClick = {
-                    val spellsIds = selectedSpells.map { it.spellId }
-                    characterViewModel.saveSelectedSpells(characterId, spellsIds)
+                    val spellIds = selectedSpells.map { it.spellId }
+                    characterViewModel.saveSelectedSpells(characterId, spellIds)
                     navController.popBackStack()
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = leafGreen,
-                    contentColor = Color.White
-                ),
-                enabled = selectedSpells.isNotEmpty()
+                    .padding(16.dp),
+                enabled = selectedSpells.isNotEmpty(),
+                colors = ButtonDefaults.buttonColors(containerColor = leafGreen)
             ) {
-                Text("SAVE SPELLS", fontWeight = FontWeight.Bold)
+                Text("SAVE SPELLS", color = Color.White)
             }
         }
     ) { innerPadding ->
@@ -114,38 +103,21 @@ fun SpellsSelectionScreen(
             modifier = Modifier
                 .padding(innerPadding)
                 .padding(16.dp)
-                .fillMaxSize()
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "SPELL LEVEL:",
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Serif,
-                    fontSize = 16.sp,
-                    color = textDark,
-                    modifier = Modifier.padding(end = 8.dp)
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("SPELL LEVEL:", fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.width(8.dp))
+
                 var expanded by remember { mutableStateOf(false) }
 
                 ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
                     OutlinedTextField(
-                        readOnly = true,
                         value = selectedLevel,
                         onValueChange = {},
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+                        readOnly = true,
                         modifier = Modifier.menuAnchor().width(150.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = deepBrown,
-                            focusedBorderColor = deepBrown,
-                            cursorColor = deepBrown,
-                            focusedTextColor = textDark,
-                            unfocusedTextColor = textDark,
-                            focusedContainerColor = parchment,
-                            unfocusedContainerColor = parchment
-                        ),
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        label = { Text("Level") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
                     )
                     ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                         spellLevels.forEach { level ->
@@ -164,24 +136,24 @@ fun SpellsSelectionScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             if (filteredSpells.isEmpty()) {
-                Text(
-                    "No spells available for $characterClass.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Text("No spells available for $characterClass.")
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(filteredSpells) { spell ->
-                        SpellItem(
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(
+                        items = filteredSpells,
+                        key = { it.spellId }
+                    ) { spell ->
+                        SpellItemCard(
                             spell = spell,
                             isSelected = selectedSpells.contains(spell),
                             onSelectionChange = { selected ->
-                                if (selected) selectedSpells.add(spell)
-                                else selectedSpells.remove(spell)
+                                if (selected) {
+                                    if (!selectedSpells.contains(spell)) {
+                                        selectedSpells.add(spell)
+                                    }
+                                } else {
+                                    selectedSpells.remove(spell)
+                                }
                             }
                         )
                     }
@@ -192,7 +164,7 @@ fun SpellsSelectionScreen(
 }
 
 @Composable
-fun SpellItem(
+fun SpellItemCard(
     spell: Spell,
     isSelected: Boolean,
     onSelectionChange: (Boolean) -> Unit

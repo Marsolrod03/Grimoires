@@ -20,18 +20,23 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.grimoires.Grimoires.domain.model.Participant
 import com.grimoires.Grimoires.ui.theme.deepBrown
 import com.grimoires.Grimoires.ui.theme.parchment
 
 
 @Composable
 fun CampaignCharacterCard(
-    characterName: String,
-    playerName: String,
+    participant: Participant,
     onClick: () -> Unit
 ) {
+    if (participant.isMaster) return
+
     Card(
-        modifier = Modifier.fillMaxWidth().clickable { onClick() },
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 8.dp),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = parchment),
         border = BorderStroke(2.dp, deepBrown),
@@ -46,7 +51,7 @@ fun CampaignCharacterCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = characterName,
+                    text = participant.characterName,
                     color = deepBrown,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Serif,
@@ -54,7 +59,7 @@ fun CampaignCharacterCard(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Jugador: $playerName",
+                    text = "Player: ${participant.nickname}",
                     color = deepBrown,
                     fontFamily = FontFamily.Serif
                 )

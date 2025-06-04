@@ -3,7 +3,7 @@ package com.grimoires.Grimoires.domain.model
 import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.DocumentReference
 
-data class User(
+data class UserDTO(
     @DocumentId val idUser: String = "",
     val name: String = "",
     var nickname: String = "",

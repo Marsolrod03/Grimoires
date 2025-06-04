@@ -21,32 +21,30 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.grimoires.Grimoires.domain.model.Dice
+import com.grimoires.Grimoires.domain.model.DiceDTO
 
-import com.grimoires.Grimoires.ui.element_views.CustomDrawerContent
 import com.grimoires.Grimoires.ui.element_views.DiceView
 import com.grimoires.Grimoires.ui.element_views.RollResultItem
 import com.grimoires.Grimoires.ui.models.UserViewModel
@@ -61,13 +59,13 @@ fun DiceCalculatorScreen(navController: NavHostController) {
 
     val dice = remember {
         mutableStateListOf(
-            Dice(type = 4),  // D4
-            Dice(type = 6),  // D6
-            Dice(type = 8),  // D8
-            Dice(type = 10), // D10
-            Dice(type = 12), // D12
-            Dice(type = 20), // D20
-            Dice(type = 100) // D100
+            DiceDTO(type = 4),  // D4
+            DiceDTO(type = 6),  // D6
+            DiceDTO(type = 8),  // D8
+            DiceDTO(type = 10), // D10
+            DiceDTO(type = 12), // D12
+            DiceDTO(type = 20), // D20
+            DiceDTO(type = 100) // D100
         )
     }
 
@@ -98,10 +96,13 @@ fun DiceCalculatorScreen(navController: NavHostController) {
                 TopAppBar(
                     title = {
                         Text(
-                            "Calculator",
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Serif
+                            "DICE CALCULATOR",
+                            style = TextStyle(
+                                fontFamily = FontFamily.Serif,
+                                fontSize = 24.sp,
+                                color = Color.White,
+                                shadow = Shadow(blurRadius = 4f, color = Color.Black)
+                            )
                         )
                     },
                     navigationIcon = {
@@ -151,7 +152,7 @@ fun DiceCalculatorScreen(navController: NavHostController) {
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
 
                 Row(

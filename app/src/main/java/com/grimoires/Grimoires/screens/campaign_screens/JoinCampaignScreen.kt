@@ -44,7 +44,7 @@ fun JoinCampaignScreen(
     var selectedCharacter by remember { mutableStateOf<PlayableCharacter?>(null) }
 
     LaunchedEffect(userViewModel.uid) {
-        userViewModel.uid?.let { playableCharacterViewModel.loadCharactersForUser(it) }
+        userViewModel.uid?.let { playableCharacterViewModel.loadCharactersForUser(it.toString()) }
     }
 
     Scaffold(
@@ -149,7 +149,7 @@ fun JoinCampaignScreen(
                             campaignViewModel.joinCampaign(
                                 accessCode = campaignCode.value,
                                 characterName = selectedCharacter?.characterName ?: "",
-                                userId = currentUserId,
+                                userId = currentUserId.toString(),
                                 onSuccess = {
                                     scope.launch {
                                         snackbarHostState.showSnackbar("¡Succesfully Joined!")

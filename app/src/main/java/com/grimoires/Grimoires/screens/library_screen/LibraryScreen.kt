@@ -1,10 +1,7 @@
 package com.grimoires.Grimoires.screens.library_screen
 
 import HandleMenu
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,8 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,7 +26,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -44,6 +38,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -55,14 +51,14 @@ import com.grimoires.Grimoires.ui.element_views.toLibraryItem
 import com.grimoires.Grimoires.ui.models.CatalogViewModel
 import com.grimoires.Grimoires.ui.theme.deepBrown
 import com.grimoires.Grimoires.ui.theme.lightTan
-import com.grimoires.Grimoires.ui.theme.parchment
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
     navController: NavHostController,
-    nickname: String,
+    nickname: StateFlow<String?>,
     viewModel: CatalogViewModel
 ) {
     val races by viewModel.races.collectAsState()
@@ -86,6 +82,7 @@ fun LibraryScreen(
             allItems.addAll(spells.map { it.toLibraryItem() })
             allItems
         }
+
         else -> {
             val allItems = mutableListOf<LibraryItem>()
             allItems.addAll(races.map { it.toLibraryItem() })
@@ -107,7 +104,17 @@ fun LibraryScreen(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("The Library", color = Color.White, fontFamily = FontFamily.Serif) },
+                    title = {
+                        Text(
+                            "THE LIBRARY",
+                            style = TextStyle(
+                                fontFamily = FontFamily.Serif,
+                                fontSize = 24.sp,
+                                color = Color.White,
+                                shadow = Shadow(blurRadius = 4f, color = Color.Black)
+                        )
+                        )
+                    },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
                             Icon(
@@ -152,7 +159,12 @@ fun LibraryScreen(
                         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                             listOf("All", "Race", "Class", "Item", "Spell").forEach { type ->
                                 DropdownMenuItem(
-                                    text = { Text(type.replaceFirstChar { it.uppercase() }, fontFamily = FontFamily.Serif) },
+                                    text = {
+                                        Text(
+                                            type.replaceFirstChar { it.uppercase() },
+                                            fontFamily = FontFamily.Serif
+                                        )
+                                    },
                                     onClick = {
                                         selectedCategory = type
                                         expanded = false
@@ -194,10 +206,8 @@ fun LibraryScreen(
                                     "class" -> navController.navigate("detail/class/$id")
                                     "item" -> navController.navigate("detail/item/$id")
                                     "spell" -> navController.navigate("detail/spell/$id")
-                                    else -> println("Tipo no válido para navegación: $type")
+
                                 }
-                            } else {
-                                println("Id vacío, no se navega")
                             }
                         }
                     }

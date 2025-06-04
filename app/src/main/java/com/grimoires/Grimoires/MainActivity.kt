@@ -9,7 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -26,16 +25,17 @@ import com.grimoires.Grimoires.screens.authentication_screens.WelcomeScreen
 import com.grimoires.Grimoires.screens.calculator.DiceCalculatorScreen
 import com.grimoires.Grimoires.screens.campaign_screens.CampaignDetailScreen
 import com.grimoires.Grimoires.screens.campaign_screens.CreateCampaignScreen
-
-import com.grimoires.Grimoires.screens.character_screens.AddCharacterScreen
-import com.grimoires.Grimoires.screens.character_screens.CharacterSheetScreen
-import com.grimoires.Grimoires.screens.character_screens.CharacterScreen
 import com.grimoires.Grimoires.screens.catalog_screens.EquipmentScreen
 import com.grimoires.Grimoires.screens.catalog_screens.EquipmentSelectionScreen
 import com.grimoires.Grimoires.screens.catalog_screens.SpellsScreen
 import com.grimoires.Grimoires.screens.catalog_screens.SpellsSelectionScreen
+import com.grimoires.Grimoires.screens.character_screens.AddCharacterScreen
+import com.grimoires.Grimoires.screens.character_screens.CharacterScreen
+import com.grimoires.Grimoires.screens.character_screens.CharacterSheetScreen
+import com.grimoires.Grimoires.screens.character_screens.EditCharacterScreen
 import com.grimoires.Grimoires.screens.character_screens.StatsScreen
 import com.grimoires.Grimoires.screens.home_screen.HomeScreenWithDrawer
+import com.grimoires.Grimoires.screens.home_screen.WebViewScreen
 import com.grimoires.Grimoires.screens.library_screen.ClassDetailScreen
 import com.grimoires.Grimoires.screens.library_screen.ItemDetailScreen
 import com.grimoires.Grimoires.screens.library_screen.LibraryScreen
@@ -44,10 +44,10 @@ import com.grimoires.Grimoires.screens.library_screen.SpellDetailScreen
 import com.grimoires.Grimoires.screens.npc_screens.NpcCreationScreen
 import com.grimoires.Grimoires.screens.npc_screens.NpcDetailScreen
 import com.grimoires.Grimoires.screens.npc_screens.NpcManagementScreen
-
 import com.grimoires.Grimoires.ui.element_views.FullScreenLoading
 import com.grimoires.Grimoires.ui.models.CatalogViewModel
 import com.grimoires.Grimoires.ui.models.LoginViewModel
+import com.grimoires.Grimoires.ui.models.NotesViewModel
 import com.grimoires.Grimoires.ui.models.PlayableCharacterViewModel
 import com.grimoires.Grimoires.ui.models.StatsViewModel
 import com.grimoires.Grimoires.ui.models.UserViewModel
@@ -77,6 +77,10 @@ fun MyApp() {
     val catalogViewModel: CatalogViewModel = viewModel()
     val campaignViewModel: CampaignViewModel =
         viewModel(factory = CampaignViewModelFactory())
+    val notesViewModel: NotesViewModel = viewModel()
+    val nickname by userViewModel.nickname.collectAsState()
+
+
 
 
     LaunchedEffect(loginViewModel.isLoggedIn.value) {
@@ -106,12 +110,21 @@ fun MyApp() {
             ProfileScreen(navController)
         }
 
+        composable(
+            route = "webView/{url}",
+            arguments = listOf(navArgument("url") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val url = backStackEntry.arguments?.getString("url") ?: ""
+            WebViewScreen(url = url)
+        }
+
         composable("characters") {
             val characters by characterViewModel.userCharacters.collectAsState()
             val nickname = userViewModel.nickname
+            val uid by userViewModel.uid.collectAsState()
 
-            LaunchedEffect(userViewModel.uid) {
-                userViewModel.uid?.let { characterViewModel.loadCharactersForUser(it) }
+            LaunchedEffect(uid) {
+                uid?.let { characterViewModel.loadCharactersForUser(it) }
             }
 
             CharacterScreen(
@@ -144,16 +157,20 @@ fun MyApp() {
             }
         }
 
-        composable("campaign_detail/{campaignId}") {
-            val campaignId = it.arguments?.getString("campaignId") ?: ""
-            CampaignDetailScreen(
-                navController = navController,
-                campaignId = campaignId,
-                campaignViewModel = campaignViewModel,
-                userViewModel = userViewModel
-            )
+        composable("campaign_detail/{campaignId}") { backStackEntry ->
+            val campaignId = backStackEntry.arguments?.getString("campaignId") ?: ""
+            if (campaignId.isNotEmpty()) {
+                CampaignDetailScreen(
+                    navController = navController,
+                    campaignId = campaignId,
+                    campaignViewModel = campaignViewModel,
+                    userViewModel = userViewModel,
+                    notesViewModel = notesViewModel
+                )
+            } else {
+                Text("Error: ID de campaña inválido")
+            }
         }
-
         composable("addCharacter") {
             AddCharacterScreen(
                 navController = navController,
@@ -209,7 +226,8 @@ fun MyApp() {
         }
 
         composable("characterSheet/{characterId}") { backStackEntry ->
-            val characterId = backStackEntry.arguments?.getString("characterId") ?: return@composable
+            val characterId =
+                backStackEntry.arguments?.getString("characterId") ?: return@composable
 
             val playableCharacterViewModel: PlayableCharacterViewModel = viewModel()
             val character by playableCharacterViewModel.currentCharacter.collectAsState()
@@ -293,6 +311,13 @@ fun MyApp() {
             }
         }
 
+        composable("edit_character/{characterId}") { backStackEntry ->
+            val characterId = backStackEntry.arguments?.getString("characterId") ?: ""
+            EditCharacterScreen(characterId = characterId, navController = navController)
+        }
+
+
+
         composable("detail/item/{itemId}") { backStackEntry ->
             val itemId = backStackEntry.arguments?.getString("itemId") ?: ""
             val items by catalogViewModel.items.collectAsState()
@@ -304,6 +329,22 @@ fun MyApp() {
                 }
             }
         }
+
+        composable("equipment_select/{characterId}") { backStackEntry ->
+            val characterId = backStackEntry.arguments?.getString("characterId") ?: ""
+            EquipmentSelectionScreen(navController = navController, characterId = characterId)
+        }
+
+        composable("spells_select/{characterId}/{characterClass}") { backStackEntry ->
+            val characterId = backStackEntry.arguments?.getString("characterId") ?: ""
+            val characterClass = backStackEntry.arguments?.getString("characterClass") ?: ""
+            SpellsSelectionScreen(
+                navController = navController,
+                characterId = characterId,
+                characterClass = characterClass
+            )
+        }
+
 
         composable("detail/spell/{spellId}") { backStackEntry ->
             val spellId = backStackEntry.arguments?.getString("spellId") ?: ""
@@ -345,14 +386,16 @@ fun MyApp() {
             "inventoryScreen/{characterName}",
             arguments = listOf(navArgument("characterName") { type = NavType.StringType })
         ) { backStackEntry ->
-            val characterName = backStackEntry.arguments?.getString("characterName") ?: ""
+            val userId by userViewModel.uid.collectAsState()
+
             EquipmentScreen(
-                characterId = userViewModel.uid ?: "",
+                characterId = userId ?: "",
                 viewModel = characterViewModel,
                 navController = navController,
                 onBackClick = { navController.popBackStack() }
             )
         }
+
 
         composable(
             "spellsScreen/{characterId}",
@@ -367,6 +410,6 @@ fun MyApp() {
             )
         }
     }
-    }
+}
 
 

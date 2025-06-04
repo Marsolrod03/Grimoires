@@ -2,6 +2,8 @@ package com.grimoires.Grimoires.ui.models
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.grimoires.Grimoires.domain.model.CharacterClass
@@ -63,15 +65,15 @@ class CatalogViewModel : ViewModel() {
             }
     }
 
-    private fun fetchItems() {
+
+
+    fun fetchItems() {
         firestore.collection("items")
             .get()
             .addOnSuccessListener { result ->
-                val list = result.documents.mapNotNull { doc ->
+                _items.value = result.documents.mapNotNull { doc ->
                     doc.toObject(Item::class.java)?.copy(itemId = doc.id)
                 }
-                _items.value = list
-                Log.d("CatalogViewModel", "Fetched ${list.size} items")
             }
             .addOnFailureListener { e ->
                 Log.e("CatalogViewModel", "Failed to fetch items", e)

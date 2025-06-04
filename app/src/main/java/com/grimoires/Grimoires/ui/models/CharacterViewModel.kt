@@ -1,22 +1,16 @@
 package com.grimoires.Grimoires.ui.models
 
-import ads_mobile_sdk.db
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
 import com.grimoires.Grimoires.domain.model.Item
 import com.grimoires.Grimoires.domain.model.PlayableCharacter
 import com.grimoires.Grimoires.domain.model.Spell
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.tasks.await
 
 
 class PlayableCharacterViewModel : ViewModel() {
@@ -45,6 +39,55 @@ class PlayableCharacterViewModel : ViewModel() {
                 }
             }
     }
+
+    fun loadSpellsByIds(characterId: String, onLoaded: (List<Spell>) -> Unit) {
+        db.collection("characters").document(characterId)
+            .get()
+            .addOnSuccessListener { document ->
+                val spellRefs = document.get("spells") as? List<DocumentReference> ?: emptyList()
+
+                if (spellRefs.isEmpty()) {
+                    onLoaded(emptyList())
+                    return@addOnSuccessListener
+                }
+
+                val ids = spellRefs.map { it.id }
+                db.collection("spells")
+                    .whereIn(FieldPath.documentId(), ids)
+                    .get()
+                    .addOnSuccessListener { querySnapshot ->
+                        val spellsList = querySnapshot.documents.mapNotNull { doc ->
+                            doc.toObject(Spell::class.java)?.copy(spellId = doc.id)
+                        }
+                        onLoaded(spellsList)
+                    }
+            }
+    }
+
+    fun loadItemsByIds(characterId: String, onLoaded: (List<Item>) -> Unit) {
+        db.collection("characters").document(characterId)
+            .get()
+            .addOnSuccessListener { document ->
+                val itemRefs = document.get("inventory") as? List<DocumentReference> ?: emptyList()
+
+                if (itemRefs.isEmpty()) {
+                    onLoaded(emptyList())
+                    return@addOnSuccessListener
+                }
+
+                val ids = itemRefs.map { it.id }
+                db.collection("items")
+                    .whereIn(FieldPath.documentId(), ids)
+                    .get()
+                    .addOnSuccessListener { querySnapshot ->
+                        val itemsList = querySnapshot.documents.mapNotNull { doc ->
+                            doc.toObject(Item::class.java)?.copy(itemId = doc.id)
+                        }
+                        onLoaded(itemsList)
+                    }
+            }
+    }
+
     fun loadCharacterById(characterId: String) {
         if (characterId.isEmpty()) return
 
@@ -96,45 +139,6 @@ class PlayableCharacterViewModel : ViewModel() {
             .addOnFailureListener { onError() }
     }
 
-    fun saveSelectedItems(characterId: String, itemIds: List<String>) {
-        val db = FirebaseFirestore.getInstance()
-        val itemRefs = itemIds.map { db.collection("items").document(it) }
-
-        db.collection("characters")
-            .document(characterId)
-            .set(mapOf("inventory" to itemRefs), SetOptions.merge())
-            .addOnSuccessListener {
-                Log.d("Firestore", "Inventory saved successfully.")
-            }
-            .addOnFailureListener {
-                Log.e("Firestore", "Failed to save inventory.", it)
-            }
-    }
-
-    fun getCharacter(characterId: String): Flow<PlayableCharacter?> = flow {
-        val snapshot = FirebaseFirestore.getInstance()
-            .collection("characters")
-            .document(characterId)
-            .get()
-            .await()
-
-        emit(snapshot.toObject(PlayableCharacter::class.java))
-    }
-
-    fun saveSelectedSpells(characterId: String, spellIds: List<String>) {
-        val db = FirebaseFirestore.getInstance()
-        val spellRefs = spellIds.map { db.collection("spells").document(it) }
-
-        db.collection("characters")
-            .document(characterId)
-            .set(mapOf("spells" to spellRefs), SetOptions.merge())
-            .addOnSuccessListener {
-                Log.d("Firestore", "Spells saved successfully.")
-            }
-            .addOnFailureListener {
-                Log.e("Firestore", "Failed to save spells.", it)
-            }
-    }
 
     fun deleteCharacter(characterId: String, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
         FirebaseFirestore.getInstance()
@@ -145,66 +149,21 @@ class PlayableCharacterViewModel : ViewModel() {
             .addOnFailureListener { e -> onError(e) }
     }
 
-    fun loadItemsByIds(characterId: String, onResult: (List<Item>) -> Unit) {
+    fun saveSelectedSpells(characterId: String, spellIds: List<String>) {
         val db = FirebaseFirestore.getInstance()
+        val spellRefs = spellIds.map { db.collection("spells").document(it) }
 
-        db.collection("characters").document(characterId).get()
-            .addOnSuccessListener { document ->
-                val itemRefs = document.get("inventory") as? List<DocumentReference> ?: emptyList()
-                if (itemRefs.isEmpty()) {
-                    onResult(emptyList())
-                    return@addOnSuccessListener
-                }
-
-                val itemIds = itemRefs.mapNotNull { it.id }
-
-                db.collection("items")
-                    .whereIn(FieldPath.documentId(), itemIds)
-                    .get()
-                    .addOnSuccessListener { snapshot ->
-                        val items = snapshot.documents.mapNotNull { it.toObject(Item::class.java) }
-                        onResult(items)
-                    }
-                    .addOnFailureListener {
-                        Log.e("Firestore", "Error loading items: $it")
-                        onResult(emptyList())
-                    }
-            }
-            .addOnFailureListener {
-                Log.e("Firestore", "Error loading character document: $it")
-                onResult(emptyList())
-            }
+        db.collection("characters")
+            .document(characterId)
+            .update("spells", spellRefs)
     }
 
-    fun loadSpellsByIds(characterId: String, onResult: (List<Spell>) -> Unit) {
+    fun saveSelectedItems(characterId: String, itemIds: List<String>) {
         val db = FirebaseFirestore.getInstance()
+        val itemRefs = itemIds.map { db.collection("items").document(it) }
 
-        db.collection("characters").document(characterId).get()
-            .addOnSuccessListener { document ->
-                val spellRefs = document.get("spells") as? List<DocumentReference> ?: emptyList()
-                if (spellRefs.isEmpty()) {
-                    onResult(emptyList())
-                    return@addOnSuccessListener
-                }
-
-                val spellIds = spellRefs.mapNotNull { it.id }
-
-                db.collection("spells")
-                    .whereIn(FieldPath.documentId(), spellIds)
-                    .get()
-                    .addOnSuccessListener { snapshot ->
-                        val spells =
-                            snapshot.documents.mapNotNull { it.toObject(Spell::class.java) }
-                        onResult(spells)
-                    }
-                    .addOnFailureListener {
-                        Log.e("Firestore", "Error loading spells: $it")
-                        onResult(emptyList())
-                    }
-            }
-            .addOnFailureListener {
-                Log.e("Firestore", "Error loading character document: $it")
-                onResult(emptyList())
-            }
+        db.collection("characters")
+            .document(characterId)
+            .update("inventory", itemRefs)
     }
 }

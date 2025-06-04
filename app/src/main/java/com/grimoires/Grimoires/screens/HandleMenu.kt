@@ -8,21 +8,25 @@ import androidx.navigation.NavHostController
 import com.grimoires.Grimoires.ui.element_views.CustomDrawerContent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun HandleMenu(
-    nickname: String,
+    userViewModel: StateFlow<String?>,
     navController: NavHostController,
     content: @Composable (CoroutineScope, DrawerState) -> Unit
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val nickname by userViewModel.collectAsState()
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             CustomDrawerContent(
-                nickname = nickname,
+                nickname = nickname ?: "Guest",
                 onOptionSelected = { option ->
                     val route = when (option) {
                         "MY CHARACTERS" -> "characters"

@@ -1,6 +1,6 @@
 package com.grimoires.Grimoires.viewmodel
 
-import androidx.compose.runtime.snapshotFlow
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -10,19 +10,19 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.snapshots
-import com.grimoires.Grimoires.data.network.NotificationService
 import com.grimoires.Grimoires.domain.model.Campaign
 import com.grimoires.Grimoires.domain.model.NonPlayableCharacter
 import com.grimoires.Grimoires.domain.model.Note
 import com.grimoires.Grimoires.domain.model.Participant
-import com.grimoires.Grimoires.domain.model.PlayableCharacter
-import com.grimoires.Grimoires.domain.model.User
-import com.grimoires.Grimoires.ui.models.UserViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+
 
 class CampaignViewModel(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
@@ -57,8 +57,44 @@ class CampaignViewModel(
     fun getCampaign(campaignId: String): Flow<Campaign?> {
         return firestore.collection("campaigns").document(campaignId)
             .snapshots()
-            .map { it.toObject(Campaign::class.java) }
+            .map { doc ->
+                println("getCampaign → doc.exists: ${doc.exists()}, id: ${doc.id}, data: ${doc.data}")
+
+                if (doc.exists()) {
+                    try {
+                        val accessCode = doc.getString("accessCode") ?: ""
+                        val title = doc.getString("title") ?: ""
+                        val description = doc.getString("description") ?: ""
+                        val masterID = doc.getString("masterID") ?: ""
+                        val playersRaw = doc.get("players") as? List<*> ?: emptyList<Any>()
+
+                        val players = playersRaw.mapNotNull {
+                            when (it) {
+                                is DocumentReference -> it
+                                is String -> firestore.document("users/$it")
+                                else -> null
+                            }
+                        }
+
+                        Campaign(
+                            idCampaign = doc.id,
+                            accessCode = accessCode,
+                            title = title,
+                            description = description,
+                            masterID = masterID,
+                            players = players
+                        )
+                    } catch (e: Exception) {
+                        Log.e("CampaignViewModel", "Error al mapear campaña: ${e.message}")
+                        null
+                    }
+                } else {
+                    Log.w("CampaignViewModel", "Campaña no encontrada: $campaignId")
+                    null
+                }
+            }
     }
+
 
     fun loadMasteredCampaigns(userId: String) {
         firestore.collection("campaigns")
@@ -106,7 +142,9 @@ class CampaignViewModel(
                     )
                 } ?: emptyList()
 
-                _playedCampaigns.value = campaigns
+                val filteredCampaigns = campaigns.filter { it.masterID != userId }
+
+                _playedCampaigns.value = filteredCampaigns
             }
     }
 
@@ -121,14 +159,12 @@ class CampaignViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val masterRef = firestore.collection("users").document(masterId)
-
                 val newCampaign = hashMapOf(
                     "title" to title,
                     "description" to description,
                     "masterID" to masterId,
                     "accessCode" to accessCode,
-                    "players" to listOf(masterRef)
+                    "players" to emptyList<DocumentReference>()
                 )
 
                 firestore.collection("campaigns")
@@ -170,7 +206,6 @@ class CampaignViewModel(
                             idCampaign = doc.id,
                             title = doc.getString("title") ?: "",
                             description = doc.getString("description") ?: "",
-                            genre = doc.getString("genre") ?: "",
                             masterID = doc.getString("masterID") ?: "",
                             accessCode = doc.getString("accessCode") ?: "",
                             players = players
@@ -200,7 +235,6 @@ class CampaignViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // 1. Buscar campaña por código de acceso (fuera de la transacción)
                 val campaignQuery = firestore.collection("campaigns")
                     .whereEqualTo("accessCode", accessCode)
                     .limit(1)
@@ -259,7 +293,7 @@ class CampaignViewModel(
                         idNote = doc.id,
                         title = doc.getString("title") ?: "",
                         content = doc.getString("text") ?: "",
-                        userID = doc.getString("authorId") ?: "",
+                        authorID = doc.getString("authorId") ?: "",
                         date = doc.getTimestamp("timestamp") ?: Timestamp.now()
                     )
                 }
@@ -290,6 +324,23 @@ class CampaignViewModel(
     fun loadCampaignParticipants(campaignId: String) {
         viewModelScope.launch {
             try {
+                val campaignDoc = firestore.collection("campaigns").document(campaignId).get().await()
+                val masterID = campaignDoc.getString("masterID") ?: ""
+                val playerRefs = campaignDoc.get("players") as? List<DocumentReference> ?: emptyList()
+
+
+                val allUserRefs = (listOf(firestore.document("users/$masterID")) + playerRefs
+                    .distinctBy { it.id }
+                    .filter { it.id != masterID })
+
+
+                val usersMap = allUserRefs.map { ref ->
+                    async {
+                        val userDoc = ref.get().await()
+                        ref.id to (userDoc.getString("nickname") ?: "Sin nombre")
+                    }
+                }.awaitAll().toMap()
+
                 val charactersSnapshot = firestore.collection("characters")
                     .whereEqualTo("campaignId", campaignId)
                     .get()
@@ -297,30 +348,43 @@ class CampaignViewModel(
 
                 val characterMap = charactersSnapshot.documents.associate { doc ->
                     val userId = doc.getString("userId") ?: ""
-                    val characterName = doc.getString("characterName") ?: "Sin nombre"
+                    val characterName = doc.getString("characterName") ?: "Sin personaje"
                     val characterId = doc.id
-                    userId to (characterName to characterId)
+                    userId to Pair(characterName, characterId)
                 }
-                val campaignDoc = firestore.collection("campaigns").document(campaignId).get().await()
-                val playerRefs = campaignDoc.get("players") as? List<DocumentReference> ?: emptyList()
+                val participantsList = mutableListOf<Participant>()
 
-                val participantsList = playerRefs.map { ref ->
-                    async {
-                        val userDoc = ref.get().await()
-                        val nickname = userDoc.getString("nickname") ?: "Sin nombre"
-                        val (characterName, characterId) = characterMap[ref.id] ?: ("Sin nombre" to "")
-                        Participant(
-                            userId = ref.id,
-                            nickname = nickname,
-                            characterName = characterName,
-                            characterID = characterId
+                participantsList.add(
+                    Participant(
+                        userId = masterID,
+                        nickname = usersMap[masterID] ?: "Master",
+                        characterName = "Master",
+                        characterID = "",
+                        isMaster = true
+                    )
+                )
+
+                playerRefs.forEach { playerRef ->
+                    val userId = playerRef.id
+                    if (userId != masterID) {
+                        val nickname = usersMap[userId] ?: "Jugador desconocido"
+                        val (characterName, characterId) = characterMap[userId] ?: ("Sin personaje" to "")
+
+                        participantsList.add(
+                            Participant(
+                                userId = userId,
+                                nickname = nickname,
+                                characterName = characterName,
+                                characterID = characterId,
+                                isMaster = false
+                            )
                         )
                     }
-                }.awaitAll()
+                }
 
                 _participants.value = participantsList
             } catch (e: Exception) {
-                _errorMessage.value = "Error loading participants: ${e.message}"
+                Log.e("CampaignViewModel", "Error loading participants: ${e.message}")
             }
         }
     }

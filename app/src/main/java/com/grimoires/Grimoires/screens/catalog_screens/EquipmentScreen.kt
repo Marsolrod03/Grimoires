@@ -30,6 +30,7 @@ import com.grimoires.Grimoires.ui.theme.deepBrown
 import com.grimoires.Grimoires.ui.theme.parchment
 import com.grimoires.Grimoires.ui.theme.oak
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EquipmentScreen(
@@ -38,32 +39,21 @@ fun EquipmentScreen(
     navController: NavController,
     onBackClick: () -> Unit
 ) {
+    var items by remember { mutableStateOf<List<Item>>(emptyList()) }
+    var characterName by remember { mutableStateOf("Character") }
+
     LaunchedEffect(characterId) {
         viewModel.loadCharacterById(characterId)
+        viewModel.loadItemsByIds(characterId) { loadedItems ->
+            items = loadedItems
+        }
     }
 
     val character by viewModel.currentCharacter.collectAsState()
-    var items by remember { mutableStateOf<List<Item>>(emptyList()) }
 
-    val itemRefs = character?.inventory ?: emptyList()
-
-    LaunchedEffect(itemRefs) {
-        if (itemRefs.isNotEmpty()) {
-            viewModel.loadItemsByIds(characterId) { itemIds ->
-                val db = FirebaseFirestore.getInstance()
-                db.collection("items")
-                    .whereIn(FieldPath.documentId(), itemIds)
-                    .get()
-                    .addOnSuccessListener { snapshot ->
-                        items = snapshot.documents.mapNotNull { it.toObject(Item::class.java) }
-                    }
-                    .addOnFailureListener {
-                        Log.e("EquipmentScreen", "Failed to load items", it)
-                        items = emptyList()
-                    }
-            }
-        } else {
-            items = emptyList()
+    LaunchedEffect(character) {
+        character?.let {
+            characterName = it.characterName
         }
     }
 
@@ -72,7 +62,7 @@ fun EquipmentScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "${character?.characterName ?: "Character"}'s Inventory",
+                        "$characterName's Inventory",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = Serif,
@@ -101,13 +91,14 @@ fun EquipmentScreen(
                 Text("No equipment available.", fontFamily = Serif)
             } else {
                 items.forEach { item ->
-                    ItemCard(item = item, onClick = { navController.navigate("item_Detail/${item.itemId}") })
+                    ItemCard(item = item, onClick = {
+                        navController.navigate("item_Detail/${item.itemId}")
+                    })
                 }
             }
         }
     }
 }
-
 
 @Composable
 fun ItemCard(item: Item, onClick: () -> Unit) {

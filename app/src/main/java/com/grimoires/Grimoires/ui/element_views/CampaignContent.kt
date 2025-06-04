@@ -30,45 +30,51 @@ fun CampaignCard(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
         colors = CardDefaults.cardColors(containerColor = parchment),
-        border = BorderStroke(2.dp, deepBrown),
         shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(2.dp, deepBrown),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
             Text(
                 text = campaign.title,
                 color = deepBrown,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Serif,
-                fontSize = 18.sp
+                fontSize = 20.sp
+
             )
-            Spacer(modifier = Modifier.height(4.dp))
+
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = campaign.description,
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Black
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "Jugadores: ${campaign.players.size}",
                 color = deepBrown,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 fontFamily = FontFamily.Serif,
-                fontSize = 18.sp
+                fontSize = 16.sp
             )
         }
     }
 }
+
 
 @Composable
 fun FullScreenLoading() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7EDDF)),
+            .background(parchment),
         contentAlignment = Alignment.Center
     ) {
-        CircularProgressIndicator(color = Color(0xFF8B3A2E))
+        CircularProgressIndicator(color = deepBrown)
     }
 }

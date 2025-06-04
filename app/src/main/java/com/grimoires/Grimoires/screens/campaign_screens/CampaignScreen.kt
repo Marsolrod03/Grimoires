@@ -19,6 +19,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -28,23 +29,20 @@ import com.grimoires.Grimoires.domain.model.Campaign
 import com.grimoires.Grimoires.ui.element_views.CampaignCard
 import com.grimoires.Grimoires.ui.element_views.FullScreenLoading
 import com.grimoires.Grimoires.ui.models.UserViewModel
-import com.grimoires.Grimoires.ui.theme.deepBrown
-import com.grimoires.Grimoires.ui.theme.leafGreen
-import com.grimoires.Grimoires.ui.theme.lightTan
-import com.grimoires.Grimoires.ui.theme.oak
-import com.grimoires.Grimoires.ui.theme.parchment
+import com.grimoires.Grimoires.ui.theme.*
 import com.grimoires.Grimoires.viewmodel.CampaignViewModel
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CampaignScreen(
     navController: NavHostController,
-    nickname: String,
+    nickname: StateFlow<String>,
     userViewModel: UserViewModel = viewModel(),
     viewModel: CampaignViewModel = viewModel()
 ) {
-    val currentUserId = userViewModel.uid ?: ""
+    val currentUserId by userViewModel.uid.collectAsState()
     val masteredCampaigns by viewModel.masteredCampaigns.collectAsState()
     val playedCampaigns by viewModel.playedCampaigns.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -52,19 +50,16 @@ fun CampaignScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-
     LaunchedEffect(currentUserId) {
-        if (currentUserId.isNotBlank()) {
-            viewModel.loadMasteredCampaigns(currentUserId)
-            viewModel.loadPlayedCampaigns(currentUserId)
+        currentUserId?.let {
+            viewModel.loadMasteredCampaigns(it)
+            viewModel.loadPlayedCampaigns(it)
         }
     }
 
-
-
     LaunchedEffect(errorMessage) {
-        errorMessage?.let { message ->
-            snackbarHostState.showSnackbar(message)
+        errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
             viewModel.clearErrorMessage()
         }
     }
@@ -76,7 +71,7 @@ fun CampaignScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            "GRIMOIRES",
+                            "MY CAMPAIGNS",
                             style = TextStyle(
                                 fontFamily = FontFamily.Serif,
                                 fontSize = 24.sp,
@@ -84,15 +79,10 @@ fun CampaignScreen(
                                 shadow = Shadow(blurRadius = 4f, color = Color.Black)
                             )
                         )
-
                     },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(
-                                Icons.Default.Menu,
-                                contentDescription = "Menu",
-                                tint = Color.White
-                            )
+                            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Color.White)
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -106,78 +96,84 @@ fun CampaignScreen(
                 if (isLoading) {
                     FullScreenLoading()
                 } else {
-                    Column(
+                    CampaignTabs(
                         modifier = Modifier
                             .background(lightTan)
                             .fillMaxSize()
-                            .padding(innerPadding)
-                    ) {
-                        var selectedTab by remember { mutableIntStateOf(0) }
-
-                        TabRow(
-                            selectedTabIndex = selectedTab,
-                            indicator = { tabPositions ->
-                                TabRowDefaults.Indicator(
-                                    Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                                    color = deepBrown
-                                )
-                            }
-                        ) {
-                            Tab(
-                                selected = selectedTab == 0,
-                                onClick = { selectedTab = 0 },
-                                modifier = Modifier.background(
-                                    if (selectedTab == 0) oak else deepBrown
-                                ),
-                                text = {
-                                    Text(
-                                        "MASTERED",
-                                        fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif,
-                                        color = if (selectedTab == 0) Color.White else parchment
-                                    )
-                                }
-                            )
-                            Tab(
-                                selected = selectedTab == 1,
-                                onClick = { selectedTab = 1 },
-                                modifier = Modifier.background(
-                                    if (selectedTab == 1) oak else deepBrown
-                                ),
-                                text = {
-                                    Text(
-                                        "PLAYED",
-                                        fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif,
-                                        color = if (selectedTab == 1) Color.White else parchment
-                                    )
-                                }
-                            )
-                        }
-
-                        when (selectedTab) {
-                            0 -> CampaignList(
-                                campaigns = masteredCampaigns,
-                                onCampaignClick = { campaign ->
-                                    navController.navigate("campaign_detail/${campaign.idCampaign}")
-                                },
-                                onAddClick = { navController.navigate("createCampaign") },
-                                emptyMessage = "No mastered campaigns",
-                                emptyButtonText = "CREATE CAMPAIGN"
-                            )
-
-                            1 -> CampaignList(
-                                campaigns = playedCampaigns,
-                                onCampaignClick = { campaign ->
-                                    navController.navigate("campaign_detail/${campaign.idCampaign}")
-                                },
-                                onAddClick = { navController.navigate("joinCampaign") },
-                                emptyMessage = "No campaigns played",
-                                emptyButtonText = "JOIN CAMPAIGN"
-                            )
-                        }
-                    }
+                            .padding(innerPadding),
+                        masteredCampaigns = masteredCampaigns,
+                        playedCampaigns = playedCampaigns,
+                        navController = navController
+                    )
                 }
             }
         )
+    }
+}
+
+@Composable
+fun CampaignTabs(
+    modifier: Modifier = Modifier,
+    masteredCampaigns: List<Campaign>,
+    playedCampaigns: List<Campaign>,
+    navController: NavHostController
+) {
+    var selectedTab by remember { mutableIntStateOf(0) }
+
+    Column(modifier = modifier) {
+        TabRow(
+            selectedTabIndex = selectedTab,
+            indicator = { tabPositions ->
+                TabRowDefaults.Indicator(
+                    Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                    color = deepBrown
+                )
+            }
+        ) {
+            Tab(
+                selected = selectedTab == 0,
+                onClick = { selectedTab = 0 },
+                text = {
+                    Text(
+                        "MASTERED",
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Serif,
+                        color = if (selectedTab == 0) Color.White else parchment
+                    )
+                },
+                modifier = Modifier.background(if (selectedTab == 0) oak else deepBrown)
+            )
+            Tab(
+                selected = selectedTab == 1,
+                onClick = { selectedTab = 1 },
+                text = {
+                    Text(
+                        "PLAYED",
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Serif,
+                        color = if (selectedTab == 1) Color.White else parchment
+                    )
+                },
+                modifier = Modifier.background(if (selectedTab == 1) oak else deepBrown)
+            )
+        }
+
+        when (selectedTab) {
+            0 -> CampaignList(
+                campaigns = masteredCampaigns,
+                onCampaignClick = { navController.navigate("campaign_detail/${it.idCampaign}") },
+                onAddClick = { navController.navigate("createCampaign") },
+                emptyMessage = "No mastered campaigns",
+                emptyButtonText = "CREATE CAMPAIGN"
+            )
+            1 -> CampaignList(
+                campaigns = playedCampaigns,
+                onCampaignClick = { navController.navigate("campaign_detail/${'$'}{it.idCampaign}") },
+                onAddClick = { navController.navigate("joinCampaign") },
+                emptyMessage = "No campaigns played",
+                emptyButtonText = "JOIN CAMPAIGN"
+            )
+        }
     }
 }
 
@@ -192,7 +188,7 @@ fun CampaignList(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         if (campaigns.isEmpty()) {
@@ -207,6 +203,7 @@ fun CampaignList(
                         painter = painterResource(id = R.drawable.d20),
                         contentDescription = null,
                         modifier = Modifier.size(64.dp),
+                        tint = deepBrown
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
@@ -227,7 +224,7 @@ fun CampaignList(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Button(
             onClick = onAddClick,
@@ -238,4 +235,16 @@ fun CampaignList(
             Text(text = emptyButtonText, color = Color.White)
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewEmptyCampaignList() {
+    CampaignList(
+        campaigns = emptyList(),
+        onCampaignClick = {},
+        onAddClick = {},
+        emptyMessage = "No campaigns yet",
+        emptyButtonText = "ADD CAMPAIGN"
+    )
 }

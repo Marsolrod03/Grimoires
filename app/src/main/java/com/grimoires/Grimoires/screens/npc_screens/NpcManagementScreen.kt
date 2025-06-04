@@ -1,5 +1,6 @@
 package com.grimoires.Grimoires.screens.npc_screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,20 +19,25 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.grimoires.Grimoires.screens.campaign_screens.NpcCard
 import com.grimoires.Grimoires.ui.models.NpcViewModel
 import com.grimoires.Grimoires.ui.theme.deepBrown
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.grimoires.Grimoires.ui.theme.lightTan
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,17 +51,23 @@ fun NpcManagementScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Manage NPCs", fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif) },
+                title = {
+                    Text(
+                        "NPC MANAGEMENT",
+                        style = TextStyle(
+                            fontFamily = FontFamily.Serif,
+                            fontSize = 24.sp,
+                            color = Color.White,
+                            shadow = Shadow(blurRadius = 4f, color = Color.Black)
+                        )
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                actions = {
-                    IconButton(onClick = { navController.navigate("create_npc/$campaignId") }) {
-                        Icon(Icons.Default.Add, contentDescription = "Add NPC")
-                    }
-                }
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = deepBrown)
             )
         },
         floatingActionButton = {
@@ -71,6 +83,7 @@ fun NpcManagementScreen(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
+                .background(lightTan)
                 .padding(16.dp)
         ) {
             if (npcs.isEmpty()) {
