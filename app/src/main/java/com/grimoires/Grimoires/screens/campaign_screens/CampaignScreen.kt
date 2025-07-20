@@ -64,7 +64,7 @@ fun CampaignScreen(
         }
     }
 
-    HandleMenu(nickname, navController) { scope, drawerState ->
+    HandleMenu(navController) { scope, drawerState ->
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
@@ -168,7 +168,7 @@ fun CampaignTabs(
             )
             1 -> CampaignList(
                 campaigns = playedCampaigns,
-                onCampaignClick = { navController.navigate("campaign_detail/${'$'}{it.idCampaign}") },
+                onCampaignClick = { navController.navigate("campaign_detail/${it.idCampaign}") },
                 onAddClick = { navController.navigate("joinCampaign") },
                 emptyMessage = "No campaigns played",
                 emptyButtonText = "JOIN CAMPAIGN"

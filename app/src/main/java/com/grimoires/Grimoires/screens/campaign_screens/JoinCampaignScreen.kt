@@ -34,7 +34,7 @@ fun JoinCampaignScreen(
     campaignViewModel: CampaignViewModel = viewModel()
 ) {
     val characters by playableCharacterViewModel.userCharacters.collectAsState()
-    val currentUserId = userViewModel.uid ?: ""
+    val currentUserId by userViewModel.uid.collectAsState(initial = null)
     val campaignCode = remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -43,8 +43,8 @@ fun JoinCampaignScreen(
     var expanded by remember { mutableStateOf(false) }
     var selectedCharacter by remember { mutableStateOf<PlayableCharacter?>(null) }
 
-    LaunchedEffect(userViewModel.uid) {
-        userViewModel.uid?.let { playableCharacterViewModel.loadCharactersForUser(it.toString()) }
+    LaunchedEffect(currentUserId) {
+        currentUserId?.let { playableCharacterViewModel.loadCharactersForUser(it) }
     }
 
     Scaffold(
@@ -149,7 +149,7 @@ fun JoinCampaignScreen(
                             campaignViewModel.joinCampaign(
                                 accessCode = campaignCode.value,
                                 characterName = selectedCharacter?.characterName ?: "",
-                                userId = currentUserId.toString(),
+                                userId = currentUserId ?: "",
                                 onSuccess = {
                                     scope.launch {
                                         snackbarHostState.showSnackbar("¡Succesfully Joined!")

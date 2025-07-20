@@ -41,11 +41,7 @@ fun HomeScreenWithDrawer(navController: NavHostController) {
 
 
 
-    val userViewModel: UserViewModel = viewModel()
-    val nickname = userViewModel.nickname
-
-
-    HandleMenu(nickname, navController) { scope, drawerState ->
+    HandleMenu(navController) { scope, drawerState ->
         Scaffold(
             topBar = {
                 TopAppBar(

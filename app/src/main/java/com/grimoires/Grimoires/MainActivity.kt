@@ -75,6 +75,7 @@ fun MyApp() {
     val userViewModel: UserViewModel = viewModel()
     val statsViewModel: StatsViewModel = viewModel()
     val catalogViewModel: CatalogViewModel = viewModel()
+
     val campaignViewModel: CampaignViewModel =
         viewModel(factory = CampaignViewModelFactory())
     val notesViewModel: NotesViewModel = viewModel()
@@ -128,7 +129,6 @@ fun MyApp() {
             }
 
             CharacterScreen(
-                characters = characters,
                 onCharacterClick = { character -> navController.navigate("characterDetail/${character.characterId}") },
                 onAddCharacterClick = { navController.navigate("addCharacter") },
                 nickname = nickname,

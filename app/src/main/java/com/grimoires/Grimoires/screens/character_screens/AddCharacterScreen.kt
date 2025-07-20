@@ -232,7 +232,7 @@ fun AddCharacterScreen(
                         campaignId = "",
                         inventory = emptyList(),
                         spells = emptyList(),
-                        userId = (userViewModel.uid ?: "").toString()
+                        userId = userViewModel.uid.value ?: ""
                     )
 
                     characterViewModel.addCharacterToFirestore(

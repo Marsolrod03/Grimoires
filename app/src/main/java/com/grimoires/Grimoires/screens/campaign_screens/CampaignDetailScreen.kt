@@ -1,5 +1,6 @@
 package com.grimoires.Grimoires.screens.campaign_screens
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -84,9 +85,13 @@ fun CampaignDetailScreen(
 
 
     LaunchedEffect(campaignId) {
-        campaignViewModel.loadCampaignParticipants(campaignId)
-        campaignViewModel.loadCampaignNpcs(campaignId)
-        notesViewModel.loadNotes(campaignId)
+        if (campaignId.isNotEmpty()) {
+            campaignViewModel.loadCampaignParticipants(campaignId)
+            campaignViewModel.loadCampaignNpcs(campaignId)
+            notesViewModel.loadNotes(campaignId)
+        } else {
+            Log.e("CampaignDetail", "ID de campaña vacío")
+        }
     }
 
     Scaffold(

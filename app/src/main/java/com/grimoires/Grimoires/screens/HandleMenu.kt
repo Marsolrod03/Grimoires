@@ -10,17 +10,20 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.grimoires.Grimoires.ui.models.UserViewModel
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun HandleMenu(
-    userViewModel: StateFlow<String?>,
     navController: NavHostController,
     content: @Composable (CoroutineScope, DrawerState) -> Unit
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val nickname by userViewModel.collectAsState()
+
+    val userViewModel: UserViewModel = viewModel()
+    val nickname by userViewModel.nickname.collectAsState()
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -29,6 +32,7 @@ fun HandleMenu(
                 nickname = nickname ?: "Guest",
                 onOptionSelected = { option ->
                     val route = when (option) {
+                        "HOME" -> "home"
                         "MY CHARACTERS" -> "characters"
                         "MY CAMPAIGNS" -> "campaigns"
                         "THE LIBRARY" -> "library"

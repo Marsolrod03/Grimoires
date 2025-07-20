@@ -100,7 +100,7 @@ fun LibraryScreen(
         println("LibraryItem -> id: '${it.id}', title: '${it.title}', type: '${it.type}'")
     }
 
-    HandleMenu(nickname, navController) { scope, drawerState ->
+    HandleMenu(navController) { scope, drawerState ->
         Scaffold(
             topBar = {
                 TopAppBar(
