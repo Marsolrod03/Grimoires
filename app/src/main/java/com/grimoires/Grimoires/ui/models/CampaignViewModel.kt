@@ -40,10 +40,6 @@ class CampaignViewModel(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage = _errorMessage.asStateFlow()
 
-    private val _notes = MutableStateFlow<List<Note>>(emptyList())
-    val notes = _notes.asStateFlow()
-
-
     private val _participants = MutableStateFlow<List<Participant>>(emptyList())
     val participants = _participants.asStateFlow()
 
@@ -52,7 +48,6 @@ class CampaignViewModel(
 
     private val _npcs = MutableStateFlow<List<NonPlayableCharacter>>(emptyList())
     val npcs = _npcs.asStateFlow()
-
 
     fun getCampaign(campaignId: String): Flow<Campaign?> {
         return firestore.collection("campaigns").document(campaignId)
@@ -142,7 +137,8 @@ class CampaignViewModel(
                     )
                 } ?: emptyList()
 
-                val filteredCampaigns = campaigns.filter { it.masterID != userId }
+                val filteredCampaigns = campaigns.filter { !it.masterID.equals(userId, ignoreCase = true) }
+
 
                 _playedCampaigns.value = filteredCampaigns
             }

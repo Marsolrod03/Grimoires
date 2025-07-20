@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily.Companion.Serif
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -36,6 +37,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.grimoires.Grimoires.R
 import com.grimoires.Grimoires.ui.models.LoginViewModel
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 
 
 @Composable
@@ -121,7 +123,8 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel) {
                 value = email,
                 onValueChange = { viewModel.updateEmail(it) },
                 label = "Email",
-                color = textFieldColor
+                color = textFieldColor,
+                visualTransformation = VisualTransformation.None
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -138,6 +141,7 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel) {
             CustomTextField(
                 value = password,
                 onValueChange = { viewModel.updatePassword(it) },
+                visualTransformation = PasswordVisualTransformation(),
                 label = "Password",
                 color = textFieldColor,
                 isPassword = true
@@ -182,7 +186,8 @@ fun CustomTextField(
     onValueChange: (String) -> Unit,
     label: String,
     color: Color,
-    isPassword: Boolean = false
+    isPassword: Boolean = false,
+    visualTransformation: VisualTransformation
 ) {
     TextField(
         value = value,
@@ -198,6 +203,10 @@ fun CustomTextField(
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent
         ),
+        visualTransformation = visualTransformation,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(50))
     )
 }
 
@@ -207,7 +216,8 @@ fun LoadingButton(
     onClick: () -> Unit,
     backgroundColor: Color,
     textColor: Color,
-    text: String
+    text: String,
+
 ) {
     Button(
         onClick = onClick,
@@ -215,6 +225,7 @@ fun LoadingButton(
         colors = ButtonDefaults.buttonColors(
             containerColor = backgroundColor
         ),
+
         modifier = Modifier
             .fillMaxWidth()
             .height(50.dp)
@@ -229,6 +240,7 @@ fun LoadingButton(
                 text = text,
                 color = textColor,
                 fontWeight = FontWeight.Bold
+
             )
         }
     }

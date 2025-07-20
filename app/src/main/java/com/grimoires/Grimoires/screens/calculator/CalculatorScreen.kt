@@ -90,7 +90,7 @@ fun DiceCalculatorScreen(navController: NavHostController) {
         rollResults.clear()
     }
 
-    HandleMenu(nickname, navController) { scope, drawerState ->
+    HandleMenu(navController) { scope, drawerState ->
         Scaffold(
             topBar = {
                 TopAppBar(

@@ -28,6 +28,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,11 +57,9 @@ import com.grimoires.Grimoires.ui.theme.parchment
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
 @Composable
 fun CharacterScreen(
-    characters: List<PlayableCharacter>,
     onCharacterClick: (PlayableCharacter) -> Unit,
     onAddCharacterClick: () -> Unit,
     nickname: StateFlow<String?>,
@@ -69,15 +68,18 @@ fun CharacterScreen(
     val backgroundColor = lightTan
     val viewModel: PlayableCharacterViewModel = viewModel()
     val userViewModel: UserViewModel = viewModel()
+    val characters by viewModel.userCharacters.collectAsState()
     var characterToDelete by remember { mutableStateOf<PlayableCharacter?>(null) }
 
 
-    LaunchedEffect(Unit) {
-        userViewModel.uid?.let { viewModel.loadCharactersForUser(it.toString()) }
+    val uid by userViewModel.uid.collectAsState()
+
+    LaunchedEffect(uid) {
+        uid?.let { viewModel.fetchCharactersForUser(it) }
     }
 
 
-    HandleMenu(nickname, navController) { scope, drawerState ->
+    HandleMenu(navController) { scope, drawerState ->
         Scaffold(
             topBar = {
                 TopAppBar(

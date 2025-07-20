@@ -62,7 +62,7 @@ fun ProfileScreen(navController: NavHostController) {
         }
     }
 
-    HandleMenu(userViewModel.nickname, navController) { scope, drawerState ->
+    HandleMenu(navController) { scope, drawerState ->
         Scaffold(
             topBar = {
                 TopAppBar(
